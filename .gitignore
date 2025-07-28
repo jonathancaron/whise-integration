@@ -1,0 +1,26 @@
+# Ignore system and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node modules (if any)
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Build/dist folders (if any)
+dist/
+
+# Composer vendor (if used)
+vendor/
+
+# SASS/SCSS cache
+.sass-cache/
+
+# Ignore WordPress core folders (not needed for plugin repo)
+/wp-admin/
+/wp-content/
+/wp-includes/
