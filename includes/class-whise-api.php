@@ -37,8 +37,7 @@ class Whise_API {
             ],
             'timeout' => $this->timeout,
             'body' => json_encode([
-                'clientId' => $client_id,
-                'officeId' => $office_id
+                'ClientId' => $client_id
             ]),
         ]);
         if (is_wp_error($response)) return false;
@@ -63,10 +62,12 @@ class Whise_API {
             ],
             'timeout' => $this->timeout,
             'body' => json_encode([
-                'username' => $username,
-                'password' => $password
+                'Username' => $username,
+                'Password' => $password
             ]),
         ]);
+    // Documentation officielle : https://api.whise.eu/WebsiteDesigner.html
+    // Postman Collection : https://api.whise.eu/docs/postman/WhiseAPI_wd_postman_collection.json
         if (is_wp_error($response)) return false;
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
