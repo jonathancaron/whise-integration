@@ -24,8 +24,29 @@ class Whise_Property_CPT {
             'has_archive' => true,
             'hierarchical' => false,
             'menu_icon' => 'dashicons-building',
+            'rewrite' => [
+                'slug' => 'biens/%property_city%/%property_type%',
+                'with_front' => false
+            ],
         ];
         register_post_type('property', $args);
+        // Hook pour URLs SEO-friendly
+        add_filter('post_type_link', [$this, 'custom_property_permalink'], 10, 2);
+    }
+
+    /**
+     * Génère une URL SEO-friendly pour chaque bien : /biens/{ville}/{type}/{postname}/
+     */
+    public function custom_property_permalink($url, $post) {
+        if ($post->post_type == 'property') {
+            $city = get_post_meta($post->ID, 'city', true);
+            $type = get_post_meta($post->ID, 'property_type', true);
+            $city = sanitize_title($city ?: 'ville');
+            $type = sanitize_title($type ?: 'type');
+            $url = str_replace('%property_city%', $city, $url);
+            $url = str_replace('%property_type%', $type, $url);
+        }
+        return $url;
     }
 
     /**
