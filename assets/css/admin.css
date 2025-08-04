@@ -1,1 +1,273 @@
-/* CSS admin Whise Integration */
+/* Styles pour l'interface d'administration Whise Integration */
+
+.whise-stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.stat-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.stat-box h3 {
+    font-size: 2.5em;
+    margin: 0 0 10px 0;
+    color: #007cba;
+    font-weight: bold;
+}
+
+.stat-box p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.whise-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.whise-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #007cba;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.whise-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.whise-actions .button {
+    margin: 0;
+}
+
+.whise-logs {
+    margin-top: 15px;
+}
+
+.log-controls {
+    margin-bottom: 10px;
+}
+
+#whise-logs {
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+#whise-logs ul {
+    margin: 0;
+    padding: 0;
+}
+
+#whise-logs li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+#whise-logs li:last-child {
+    border-bottom: none;
+}
+
+/* Statistiques détaillées */
+.whise-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-card h3 {
+    font-size: 2em;
+    margin: 0 0 5px 0;
+    color: #007cba;
+}
+
+.stat-card p {
+    margin: 0;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* Tableaux */
+.wp-list-table th {
+    font-weight: 600;
+    color: #333;
+}
+
+.wp-list-table td {
+    vertical-align: middle;
+}
+
+/* Formulaires */
+.form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.form-table td {
+    padding: 15px 10px;
+}
+
+.form-table input[type="text"],
+.form-table input[type="password"],
+.form-table select {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Notices */
+.notice {
+    margin: 20px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .whise-stats-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .whise-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .whise-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .whise-actions .button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .form-table th {
+        width: auto;
+        display: block;
+        padding: 10px 0 5px 0;
+    }
+    
+    .form-table td {
+        display: block;
+        padding: 0 0 15px 0;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.whise-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* États de chargement */
+.whise-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.whise-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007cba;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Couleurs d'état */
+.whise-success {
+    color: #46b450;
+}
+
+.whise-error {
+    color: #dc3232;
+}
+
+.whise-warning {
+    color: #ffb900;
+}
+
+.whise-info {
+    color: #007cba;
+}
+
+/* Badges */
+.whise-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.whise-badge-success {
+    background: #46b450;
+    color: white;
+}
+
+.whise-badge-error {
+    background: #dc3232;
+    color: white;
+}
+
+.whise-badge-warning {
+    background: #ffb900;
+    color: #333;
+}
+
+.whise-badge-info {
+    background: #007cba;
+    color: white;
+}
