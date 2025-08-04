@@ -21,6 +21,12 @@ class Whise_Property_CPT {
         add_filter('manage_property_posts_columns', [$this, 'add_custom_columns']);
         add_action('manage_property_posts_custom_column', [$this, 'display_custom_columns'], 10, 2);
         
+        // Désactiver les colonnes automatiques des meta champs pour éviter les doublons
+        add_filter('manage_edit-property_columns', [$this, 'remove_auto_columns'], 15);
+        
+        // Hook supplémentaire pour nettoyer les colonnes après tous les autres plugins
+        add_filter('manage_property_posts_columns', [$this, 'final_column_cleanup'], 20);
+        
         // Ajout de la metabox détaillée
         add_action('add_meta_boxes', [$this, 'add_property_details_metabox']);
     }
@@ -383,26 +389,73 @@ class Whise_Property_CPT {
      * Ajoute des colonnes personnalisées à la liste des biens
      */
     public function add_custom_columns($columns) {
+        // Approche simple : reconstruire complètement les colonnes
         $new_columns = array();
         
-        // Réorganise les colonnes avec nos ajouts
-        foreach($columns as $key => $value) {
-            if ($key === 'title') {
-                $new_columns[$key] = $value;
-                $new_columns['reference'] = __('Référence', 'whise-integration');
-                $new_columns['price'] = __('Prix', 'whise-integration');
-                // On utilise les colonnes de taxonomies automatiques de WordPress
-                $new_columns['taxonomy-property_type'] = __('Type', 'whise-integration');
-                $new_columns['taxonomy-transaction_type'] = __('Transaction', 'whise-integration');
-                $new_columns['taxonomy-property_city'] = __('Ville', 'whise-integration');
-                $new_columns['taxonomy-property_status'] = __('Statut', 'whise-integration');
-            } else if (!in_array($key, ['taxonomy-property_type', 'taxonomy-transaction_type', 'taxonomy-property_city', 'taxonomy-property_status'])) {
-                // Éviter les doublons des taxonomies
-                $new_columns[$key] = $value;
+        // Colonnes de base WordPress qu'on garde
+        if (isset($columns['cb'])) $new_columns['cb'] = $columns['cb'];
+        if (isset($columns['title'])) $new_columns['title'] = $columns['title'];
+        
+        // Nos colonnes personnalisées
+        $new_columns['reference'] = __('Référence', 'whise-integration');
+        $new_columns['price'] = __('Prix', 'whise-integration');
+        
+        // Colonnes de taxonomies (WordPress les gère automatiquement si show_admin_column = true)
+        $new_columns['taxonomy-property_type'] = __('Type', 'whise-integration');
+        $new_columns['taxonomy-transaction_type'] = __('Transaction', 'whise-integration');
+        $new_columns['taxonomy-property_city'] = __('Ville', 'whise-integration');
+        $new_columns['taxonomy-property_status'] = __('Statut', 'whise-integration');
+        
+        // Colonne date à la fin
+        if (isset($columns['date'])) $new_columns['date'] = $columns['date'];
+        
+        return $new_columns;
+    }
+
+    /**
+     * Supprime les colonnes automatiques indésirables pour éviter les doublons
+     */
+    public function remove_auto_columns($columns) {
+        // Supprimer toutes les colonnes de meta champs automatiques qui pourraient créer des doublons
+        $meta_columns_to_remove = [];
+        
+        foreach ($columns as $key => $title) {
+            // Supprimer les colonnes qui correspondent à nos meta champs
+            if (in_array($key, ['reference', 'price', 'whise_id', 'price_formatted'])) {
+                $meta_columns_to_remove[] = $key;
+            }
+            // Supprimer aussi les colonnes générées automatiquement par WordPress pour les custom fields
+            if (strpos($key, 'meta-') === 0) {
+                $meta_columns_to_remove[] = $key;
             }
         }
         
-        return $new_columns;
+        foreach ($meta_columns_to_remove as $column) {
+            unset($columns[$column]);
+        }
+        
+        return $columns;
+    }
+
+    /**
+     * Nettoyage final des colonnes pour garantir qu'il n'y a pas de doublons
+     */
+    public function final_column_cleanup($columns) {
+        // Liste des colonnes que nous voulons garder dans l'ordre
+        $desired_columns = [
+            'cb' => $columns['cb'] ?? '',
+            'title' => $columns['title'] ?? '',
+            'reference' => __('Référence', 'whise-integration'),
+            'price' => __('Prix', 'whise-integration'),
+            'taxonomy-property_type' => __('Type', 'whise-integration'),
+            'taxonomy-transaction_type' => __('Transaction', 'whise-integration'),
+            'taxonomy-property_city' => __('Ville', 'whise-integration'),
+            'taxonomy-property_status' => __('Statut', 'whise-integration'),
+            'date' => $columns['date'] ?? ''
+        ];
+        
+        // Supprimer les entrées vides
+        return array_filter($desired_columns);
     }
 
     /**
