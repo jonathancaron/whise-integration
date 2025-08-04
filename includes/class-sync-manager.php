@@ -6,21 +6,29 @@ class Whise_Sync_Manager {
      * Traite et convertit une valeur selon son type défini
      */
     private function convert_value($value, $type) {
-        if ($value === null || $value === '') {
-            return '';
-        }
-        
         switch ($type) {
             case 'number':
+                if ($value === null || $value === '') {
+                    return 0;
+                }
                 return is_numeric($value) ? (int)$value : 0;
             case 'float':
+                if ($value === null || $value === '') {
+                    return 0.0;
+                }
                 return is_numeric($value) ? (float)$value : 0.0;
             case 'boolean':
                 return (bool)$value;
             case 'array':
+                if ($value === null || $value === '') {
+                    return [];
+                }
                 return is_array($value) ? $value : [];
             case 'string':
             default:
+                if ($value === null) {
+                    return '';
+                }
                 return (string)$value;
         }
     }
@@ -295,6 +303,13 @@ class Whise_Sync_Manager {
         if (empty($property['id'])) return;
         $whise_id = $property['id'];
         
+        // Debug amélioré pour le champ rooms
+        if (isset($property['rooms'])) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - rooms value from API: ' . var_export($property['rooms'], true) . ' (type: ' . gettype($property['rooms']) . ')');
+        } else {
+            $this->log('DEBUG - Property ' . $whise_id . ' - rooms field not found in API response');
+        }
+        
         // Récupération des taxonomies stockées
         $whise_taxonomies = get_option('whise_taxonomies_full', []);
         
@@ -360,12 +375,17 @@ class Whise_Sync_Manager {
             // Identifiants de base
             'whise_id' => $property['id'],
             'reference' => $property['referenceNumber'] ?? '',
+            'name' => $property['name'] ?? '',
             
             // Prix et conditions
             'price' => $property['price'] ?? 0,
             'price_formatted' => ($property['currency'] ?? '€') . number_format($property['price'] ?? 0, 0, ',', ' '),
+            'currency' => $property['currency'] ?? '€',
             'price_type' => $property['purpose']['id'] == 1 ? 'vente' : 'location',
             'charges' => $this->findDetailValueById($details, 344) ?? 0, // charges (€/m²/a)
+            'tenant_charges' => $this->findDetailValueById($details, 301) ?? 0, // Charges locataire
+            'professional_liberal_possibility' => $this->findDetailValueById($details, 1024) ?? 0, // possibilité profession libérale
+            'fitness_room_area' => $this->findDetailValueById($details, 1067) ?? 0, // salle de fitness
             'price_per_sqm' => $this->findDetailValueById($details, 338) ?? 0, // prix/m²/a
             
             // Surfaces
@@ -374,15 +394,24 @@ class Whise_Sync_Manager {
             'land_area' => $property['landArea'] ?? 0,
             'commercial_area' => $property['commercialArea'] ?? 0,
             'built_area' => $property['builtArea'] ?? 0,
+            'net_area' => $this->findDetailValueById($details, 407) ?? 0, // surface nette
             'min_area' => $property['minArea'] ?? 0,
             'max_area' => $property['maxArea'] ?? 0,
             'ground_area' => $property['groundArea'] ?? 0,
+            'garden_area' => $property['gardenArea'] ?? 0,
             
             // Pièces
-            'rooms' => $property['bedrooms'] ?? 0,
-            'bathrooms' => $property['bathrooms'] ?? 0,
+            'rooms' => $property['rooms'] ?? 0,
+            'bathrooms' => $property['bathRooms'] ?? 0,
             'floors' => $property['floors'] ?? 0,
+            'number_of_floors' => $this->findDetailValueById($details, 15) ?? 0, // nombre d'étages
+            'number_of_toilets' => $this->findDetailValueById($details, 55) ?? 0, // Nbre de toilette(s)
+            'width_of_facade' => $this->findDetailValueById($details, 713) ?? 0, // largeur de façade
+            'depth_of_land' => $this->findDetailValueById($details, 718) ?? 0, // profondeur terrain
+            'width_of_street_front' => $this->findDetailValueById($details, 26) ?? 0, // largeur front de rue
+            'built_area_detail' => $this->findDetailValueById($details, 27) ?? 0, // surface bâtie
             'bedrooms' => $property['bedrooms'] ?? 0,
+            'fronts' => $property['fronts'] ?? 0,
             
             // Type et statut
             'property_type' => $property['category']['displayName'] ?? $property['category']['name'] ?? '',
@@ -391,10 +420,16 @@ class Whise_Sync_Manager {
             'transaction_type' => $property['purpose']['displayName'] ?? $property['purpose']['name'] ?? '',
             'transaction_type_id' => $property['purpose']['id'] ?? '',
             'transaction_type_language' => $property['purpose']['languageId'] ?? '',
+            'purpose_status' => $property['purposeStatus']['displayName'] ?? $property['purposeStatus']['name'] ?? '',
+            'purpose_status_id' => $property['purposeStatus']['id'] ?? '',
             'status' => $property['status']['displayName'] ?? $property['status']['name'] ?? '',
             'status_id' => $property['status']['id'] ?? '',
             'status_language' => $property['status']['languageId'] ?? '',
+            'state' => $property['state']['displayName'] ?? $property['state']['name'] ?? '',
+            'state_id' => $property['state']['id'] ?? '',
             'sub_categories' => $property['subCategories'] ?? [],
+            'sub_category' => $property['subCategory']['displayName'] ?? $property['subCategory']['name'] ?? '',
+            'sub_category_id' => $property['subCategory']['id'] ?? '',
             'construction_year' => $this->findDetailValueById($details, 14) ?? 0, // Année de construction
             'renovation_year' => $this->findDetailValueById($details, 585) ?? 0, // Année de rénovation
             
@@ -403,6 +438,7 @@ class Whise_Sync_Manager {
             'city' => $property['city'] ?? '',
             'postal_code' => $property['zip'] ?? '',
             'country' => $property['country']['id'] ?? '',
+            'country_name' => $property['country']['displayName'] ?? $property['country']['name'] ?? '',
             'latitude' => $this->findDetailValueById($details, 1849) ?? 0.0, // x de coordonnées xy
             'longitude' => $this->findDetailValueById($details, 1850) ?? 0.0, // y de coordonnées xy
             'box' => $property['box'] ?? '',
@@ -411,21 +447,36 @@ class Whise_Sync_Manager {
             
             // Énergie
             'energy_class' => $property['energyClass'] ?? '',
+            'energy_value' => $property['energyValue'] ?? '',
             'epc_value' => $property['epcValue'] ?? 0,
+            'energy_class_detail' => $this->findDetailValueById($details, 2056) ?? '', // Label PEB
+            'epc_value_detail' => $this->findDetailValueById($details, 2089) ?? 0, // PEB E-SPEC (kwh/m²/an)
+            'co2_emission' => $this->findDetailValueById($details, 2090) ?? 0, // Emission CO2
+            'flood_risk' => $this->findDetailValueById($details, 2222) ?? '', // risque d'inondation
+            'flood_area_type' => $this->findDetailValueById($details, 2223) ?? '', // Type de zone inondable
             'heating_type' => $this->findDetailValueById($details, 1020) ?? '', // chauffage
             'heating_group' => $this->findDetailValueById($details, 53) ?? '', // chauffage (ind/coll)
             
             // Données cadastrales
             'cadastral_income' => $property['cadastralIncome'] ?? 0,
+            'cadastral_income_indexed' => $this->findDetailValueById($details, 496) ?? 0, // Revenu cad. indexé
+            'cadastral_income_euro' => $this->findDetailValueById($details, 1733) ?? 0, // Revenu cadastral (€)
             'cadastral_data' => $property['cadastralData'] ?? [],
             
             // Équipements
             'kitchen_type' => $this->findDetailValueById($details, 1595) ?? '', // type de cuisine
+            'bathroom_type' => $this->findDetailValueById($details, 1596) ?? '', // sdb
             'parking' => (bool)($property['parking'] ?? false),
             'garage' => (bool)($property['garage'] ?? false),
             'terrace' => (bool)($property['terrace'] ?? false),
+            'terrace_area' => $this->findDetailValueById($details, 874) ?? 0, // surface de terrasse 1
+            'living_room_area' => $this->findDetailValueById($details, 1009) ?? 0, // Salle de séjour
+            'bedroom_1_area' => $this->findDetailValueById($details, 78) ?? 0, // chambre 1
+            'bedroom_2_area' => $this->findDetailValueById($details, 79) ?? 0, // chambre 2
+            'bedroom_3_area' => $this->findDetailValueById($details, 80) ?? 0, // chambre 3
             'garden' => (bool)($property['garden'] ?? false),
             'swimming_pool' => (bool)($property['swimmingPool'] ?? false),
+            'swimming_pool_detail' => (bool)($this->findDetailValueById($details, 322) ?? false), // piscine
             'elevator' => (bool)($this->findDetailValueById($details, 372) ?? false), // ascenseur
             'cellar' => (bool)($property['cellar'] ?? false),
             'attic' => (bool)($property['attic'] ?? false),
@@ -434,16 +485,38 @@ class Whise_Sync_Manager {
             'double_glazing' => (bool)($this->findDetailValueById($details, 461) ?? false), // double vitrage
             'alarm' => (bool)($this->findDetailValueById($details, 1752) ?? false), // Alarme
             'concierge' => (bool)($this->findDetailValueById($details, 1762) ?? false), // concierge
+            'intercom' => (bool)($this->findDetailValueById($details, 1763) ?? false), // parlophone
+            'videophone' => (bool)($this->findDetailValueById($details, 1771) ?? false), // Videophone
+            'water_tank' => (bool)($this->findDetailValueById($details, 1773) ?? false), // Citerne d'eau
             'telephone' => (bool)($this->findDetailValueById($details, 729) ?? false), // téléphone
             'telephone_central' => (bool)($this->findDetailValueById($details, 734) ?? false), // centrale tél.
             'electricity' => (bool)($this->findDetailValueById($details, 757) ?? false), // électricité
+            'cable_tv' => (bool)($this->findDetailValueById($details, 1757) ?? false), // télévision par cable
+            'gas' => (bool)($this->findDetailValueById($details, 1760) ?? false), // gaz
+            'water' => (bool)($this->findDetailValueById($details, 1772) ?? false), // eau
             'oil_tank' => (bool)($this->findDetailValueById($details, 758) ?? false), // citerne à mazout
+            'tank_certificate' => (bool)($this->findDetailValueById($details, 763) ?? false), // Certificat citerne
+            'sewers' => (bool)($this->findDetailValueById($details, 724) ?? false), // égouts
+            'veranda' => (bool)($this->findDetailValueById($details, 56) ?? false), // véranda
+            'office' => (bool)($this->findDetailValueById($details, 67) ?? false), // bureau
+            'cellar' => (bool)($this->findDetailValueById($details, 134) ?? false), // débarras
+            'fitness_room' => (bool)($this->findDetailValueById($details, 142) ?? false), // salle de fitness
+            'kitchen' => (bool)($this->findDetailValueById($details, 38) ?? false), // cuisine
+            'handicap_access' => (bool)($this->findDetailValueById($details, 22) ?? false), // accès handicapés
+            'professional_liberal_possibility_bool' => (bool)($this->findDetailValueById($details, 59) ?? false), // Profession libérale poss.
             'insulation' => (bool)($this->findDetailValueById($details, 778) ?? false), // isolation
             'toilets_mf' => (bool)($this->findDetailValueById($details, 380) ?? false), // toilettes H/F
             'vta_regime' => (bool)($this->findDetailValueById($details, 574) ?? false), // Sous régime TVA
             'building_permit' => (bool)($this->findDetailValueById($details, 808) ?? false), // Permis de bâtir
             'subdivision_permit' => (bool)($this->findDetailValueById($details, 812) ?? false), // Permis de lotir
             'ongoing_judgment' => (bool)($this->findDetailValueById($details, 691) ?? false), // Jugement en cours
+            'right_of_preemption' => (bool)($this->findDetailValueById($details, 1734) ?? false), // Droit de préemption
+            'rented' => (bool)($this->findDetailValueById($details, 824) ?? false), // Loué
+            'soil_certificate' => (bool)($this->findDetailValueById($details, 820) ?? false), // attestation du sol
+            'investment_estate' => (bool)($property['investmentEstate'] ?? false),
+            'display_address' => (bool)($property['displayAddress'] ?? true),
+            'display_price' => (bool)($property['displayPrice'] ?? true),
+            'display_status_id' => $property['displayStatusId'] ?? 0,
             
             // Proximité
             'proximity_school' => $property['proximitySchool'] ?? '',
@@ -451,9 +524,18 @@ class Whise_Sync_Manager {
             'proximity_transport' => $this->findDetailValueById($details, 110) ?? '', // transports en commun
             'proximity_hospital' => $property['proximityHospital'] ?? '',
             'proximity_city_center' => $this->findDetailValueById($details, 111) ?? '', // Centre-ville
+            'proximity_shops_detail' => $this->findDetailValueById($details, 108) ?? '', // magasins
+            'proximity_schools_detail' => $this->findDetailValueById($details, 109) ?? '', // écoles
+            'proximity_beach' => $this->findDetailValueById($details, 115) ?? '', // plage
+            'proximity_shops_bool' => (bool)($this->findDetailValueById($details, 1781) ?? false), // Magasins
+            'proximity_schools_bool' => (bool)($this->findDetailValueById($details, 1782) ?? false), // Ecoles
+            'proximity_transport_bool' => (bool)($this->findDetailValueById($details, 1783) ?? false), // Transports en commun
+            'proximity_city_center_bool' => (bool)($this->findDetailValueById($details, 1784) ?? false), // Centre-ville
+            'proximity_beach_bool' => (bool)($this->findDetailValueById($details, 1788) ?? false), // Plage
             
             // Disponibilité
             'availability' => $property['availability']['id'] ?? '',
+            'availability_date' => $property['availabilityDateTime'] ?? '',
             'is_immediately_available' => (bool)($property['isImmediatelyAvailable'] ?? false),
             
             // Orientation et vues
@@ -469,6 +551,7 @@ class Whise_Sync_Manager {
             
             // Matériaux et finitions
             'floor_material' => $this->findDetailValueById($details, 1617) ?? '', // revêtement de sol de bureaux général
+            'floor_material_general' => $this->findDetailValueById($details, 1183) ?? '', // type de revêtement de sol
             'ground_destination' => $this->findDetailValueById($details, 1736) ?? '', // affectation urbanistique
             
             // Dates
@@ -493,6 +576,9 @@ class Whise_Sync_Manager {
             // Détails complets
             'details' => $details,
         ];
+        
+        // Debug final pour vérifier le mapping des rooms
+        $this->log('DEBUG - Property ' . $whise_id . ' - mapped rooms value: ' . var_export($mapped_data['rooms'], true));
         
         // Recherche d'un post existant avec ce whise_id
         $existing = get_posts([
@@ -525,6 +611,13 @@ class Whise_Sync_Manager {
             $type = $this->get_field_type($key);
             $converted_value = $this->convert_value($value, $type);
             update_post_meta($post_id, $key, $converted_value);
+            
+            // Debug spécifique pour le champ rooms
+            if ($key === 'rooms') {
+                $this->log('DEBUG - Property ' . $whise_id . ' - rooms conversion: original=' . var_export($value, true) . ', type=' . $type . ', converted=' . var_export($converted_value, true));
+                $saved_value = get_post_meta($post_id, 'rooms', true);
+                $this->log('DEBUG - Property ' . $whise_id . ' - rooms saved in DB: ' . var_export($saved_value, true) . ' (type: ' . gettype($saved_value) . ')');
+            }
         }
 
         // Mise à jour des taxonomies (on utilise displayName en priorité)

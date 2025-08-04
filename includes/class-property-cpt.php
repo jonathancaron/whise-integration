@@ -16,6 +16,13 @@ class Whise_Property_CPT {
 
         // Diagnostic admin si problème
         add_action('admin_notices', [$this, 'admin_diagnostic_notice']);
+        
+        // Ajout des colonnes personnalisées dans la liste des biens
+        add_filter('manage_property_posts_columns', [$this, 'add_custom_columns']);
+        add_action('manage_property_posts_custom_column', [$this, 'display_custom_columns'], 10, 2);
+        
+        // Ajout de la metabox détaillée
+        add_action('add_meta_boxes', [$this, 'add_property_details_metabox']);
     }
 
     public function on_activation() {
@@ -138,10 +145,10 @@ class Whise_Property_CPT {
                 'search_items' => __('Rechercher des types', 'whise-integration')
             ],
             'public' => true,
-            'show_ui' => false,
-            'show_in_menu' => false,
-            'show_in_nav_menus' => false,
-            'show_in_rest' => false,
+            'show_ui' => true,
+            'show_in_menu' => true,
+            'show_in_nav_menus' => true,
+            'show_in_rest' => true,
             'show_admin_column' => false,
             'hierarchical' => true,
             'query_var' => true,
@@ -200,7 +207,7 @@ class Whise_Property_CPT {
                         'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
                         'orientation', 'view', 'availability', 'available_date'],
             'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 
-                        'rooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income'],
+                        'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income'],
             'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 
                          'swimming_pool', 'elevator', 'cellar', 'attic'],
             'array' => ['images', 'details'],
@@ -228,7 +235,8 @@ class Whise_Property_CPT {
             'built_area' => ['desc' => 'Surface bâtie (m²)', 'type' => 'number'],
             
             // Pièces
-            'rooms' => ['desc' => 'Nombre de chambres', 'type' => 'number'],
+            'rooms' => ['desc' => 'Nombre de pièces', 'type' => 'number'],
+            'bedrooms' => ['desc' => 'Nombre de chambres', 'type' => 'number'],
             'bathrooms' => ['desc' => 'Nombre de SDB', 'type' => 'number'],
             'floors' => ['desc' => 'Nombre d\'étages', 'type' => 'number'],
             
@@ -329,6 +337,159 @@ class Whise_Property_CPT {
     public function sanitize_meta_value($value, $post_id, $meta_key) {
         // Pour l'instant, simple sanitization. À spécialiser par champ si besoin.
         return sanitize_text_field($value);
+    }
+
+    /**
+     * Ajoute des colonnes personnalisées à la liste des biens
+     */
+    public function add_custom_columns($columns) {
+        $new_columns = array();
+        
+        // Réorganise les colonnes avec nos ajouts
+        foreach($columns as $key => $value) {
+            if ($key === 'title') {
+                $new_columns[$key] = $value;
+                $new_columns['reference'] = __('Référence', 'whise-integration');
+                $new_columns['price'] = __('Prix', 'whise-integration');
+                $new_columns['property_type'] = __('Type', 'whise-integration');
+                $new_columns['transaction_type'] = __('Transaction', 'whise-integration');
+                $new_columns['city'] = __('Ville', 'whise-integration');
+                $new_columns['status'] = __('Statut', 'whise-integration');
+            } else {
+                $new_columns[$key] = $value;
+            }
+        }
+        
+        return $new_columns;
+    }
+
+    /**
+     * Affiche le contenu des colonnes personnalisées
+     */
+    public function display_custom_columns($column, $post_id) {
+        switch ($column) {
+            case 'reference':
+                echo get_post_meta($post_id, 'reference', true);
+                break;
+            case 'price':
+                echo get_post_meta($post_id, 'price_formatted', true);
+                break;
+            case 'property_type':
+                echo get_post_meta($post_id, 'property_type', true);
+                break;
+            case 'transaction_type':
+                echo get_post_meta($post_id, 'transaction_type', true);
+                break;
+            case 'city':
+                echo get_post_meta($post_id, 'city', true);
+                break;
+            case 'status':
+                echo get_post_meta($post_id, 'status', true);
+                break;
+        }
+    }
+
+    /**
+     * Ajoute la metabox de détails du bien
+     */
+    public function add_property_details_metabox() {
+        add_meta_box(
+            'property_details',
+            __('Détails du bien', 'whise-integration'),
+            [$this, 'render_property_details_metabox'],
+            'property',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Affiche la metabox de détails du bien
+     */
+    public function render_property_details_metabox($post) {
+        $field_groups = [
+            'identification' => [
+                'title' => 'Identification',
+                'fields' => ['whise_id', 'reference']
+            ],
+            'prix' => [
+                'title' => 'Prix et conditions',
+                'fields' => ['price', 'price_formatted', 'price_type', 'price_supplement', 'charges', 'price_conditions']
+            ],
+            'surfaces' => [
+                'title' => 'Surfaces',
+                'fields' => ['surface', 'total_area', 'land_area', 'commercial_area', 'built_area']
+            ],
+            'pieces' => [
+                'title' => 'Pièces',
+                'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors']
+            ],
+            'localisation' => [
+                'title' => 'Localisation',
+                'fields' => ['address', 'city', 'postal_code', 'country', 'latitude', 'longitude']
+            ],
+            'energie' => [
+                'title' => 'Énergie',
+                'fields' => ['energy_class', 'epc_value', 'heating_type']
+            ],
+            'equipements' => [
+                'title' => 'Équipements',
+                'fields' => ['kitchen_type', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 
+                           'elevator', 'cellar', 'attic']
+            ],
+            'proximite' => [
+                'title' => 'Proximité',
+                'fields' => ['proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital']
+            ]
+        ];
+
+        wp_nonce_field('whise_property_details', 'whise_property_details_nonce');
+
+        echo '<div class="whise-property-details">';
+        
+        // Style inline pour la démo
+        echo '<style>
+            .whise-property-details { padding: 15px; }
+            .whise-field-group { margin-bottom: 20px; background: #f9f9f9; padding: 15px; border: 1px solid #e5e5e5; }
+            .whise-field-group h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #e5e5e5; }
+            .whise-field-row { display: flex; margin-bottom: 8px; }
+            .whise-field-label { width: 200px; font-weight: bold; }
+            .whise-field-value { flex: 1; }
+            .whise-boolean-true { color: green; }
+            .whise-boolean-false { color: #999; }
+        </style>';
+
+        echo '<p class="description">' . __('Ces champs sont synchronisés automatiquement depuis Whise. Les modifications manuelles seront écrasées lors de la prochaine synchronisation.', 'whise-integration') . '</p>';
+
+        foreach ($field_groups as $group => $data) {
+            echo '<div class="whise-field-group">';
+            echo '<h3>' . esc_html($data['title']) . '</h3>';
+            
+            foreach ($data['fields'] as $field) {
+                $value = get_post_meta($post->ID, $field, true);
+                $field_desc = isset($fields[$field]['desc']) ? $fields[$field]['desc'] : '';
+                
+                echo '<div class="whise-field-row">';
+                echo '<div class="whise-field-label" title="' . esc_attr($field_desc) . '">' 
+                     . esc_html(ucfirst(str_replace('_', ' ', $field))) . '</div>';
+                echo '<div class="whise-field-value">';
+                
+                // Formatage spécial pour les booléens
+                if (is_bool($value) || in_array($value, ['0', '1', '', null])) {
+                    $is_true = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                    echo '<span class="whise-boolean-' . ($is_true ? 'true' : 'false') . '">';
+                    echo $is_true ? '✓' : '✗';
+                    echo '</span>';
+                } else {
+                    echo esc_html($value ?: '—');
+                }
+                
+                echo '</div></div>';
+            }
+            echo '</div>';
+        }
+        
+        echo '</div>';
     }
 
     /**

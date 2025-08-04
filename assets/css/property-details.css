@@ -1,0 +1,101 @@
+/* Styles pour la page de détails des biens */
+.whise-property-details-page {
+    margin: 20px;
+}
+
+.whise-property-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.whise-section {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 20px;
+}
+
+.whise-section h3 {
+    margin: 0;
+    padding: 12px 15px;
+    border-bottom: 1px solid #ccd0d4;
+    background: #f8f9fb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.whise-section h3 .dashicons {
+    color: #2271b1;
+}
+
+.whise-section-content {
+    padding: 15px;
+}
+
+.whise-field {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.whise-field label {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #1d2327;
+}
+
+.whise-field .whise-value {
+    color: #50575e;
+}
+
+.whise-boolean-true {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.whise-boolean-false {
+    color: #999;
+}
+
+.whise-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.whise-image {
+    position: relative;
+    padding-bottom: 100%;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.whise-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .whise-property-sections {
+        grid-template-columns: 1fr;
+    }
+    
+    .whise-field {
+        flex-direction: column;
+    }
+    
+    .whise-field label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
