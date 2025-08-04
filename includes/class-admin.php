@@ -53,14 +53,14 @@ class Whise_Admin {
         );
         
         // Ajouter un lien vers l'ajout d'une nouvelle propriété
-        add_submenu_page(
+       /* add_submenu_page(
             'whise-integration',
             __('Ajouter une propriété', 'whise-integration'),
             __('Ajouter une propriété', 'whise-integration'),
             'manage_options',
             'post-new.php?post_type=property',
             null
-        );
+        );*/
     }
 
     public function register_settings() {

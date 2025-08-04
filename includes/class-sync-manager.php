@@ -58,8 +58,15 @@ class Whise_Sync_Manager {
             
             // Type et statut
             'property_type' => 'string',
+            'property_type_id' => 'string',
+            'property_type_language' => 'string',
             'transaction_type' => 'string',
+            'transaction_type_id' => 'string',
+            'transaction_type_language' => 'string',
             'status' => 'string',
+            'status_id' => 'string',
+            'status_language' => 'string',
+            'sub_categories' => 'array',
             'construction_year' => 'number',
             'renovation_year' => 'number',
             
@@ -190,10 +197,55 @@ class Whise_Sync_Manager {
     }
 
     /**
+     * Récupère et stocke la liste complète des types, statuts et transactions depuis l'API Whise
+     */
+    public function fetch_and_store_whise_taxonomies() {
+        $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
+        $api = new Whise_API($endpoint);
+        
+        // Récupération des différentes taxonomies
+        $taxonomies = [
+            'categories' => 'v1/estates/categories',
+            'purposes' => 'v1/estates/purposes',
+            'statuses' => 'v1/estates/statuses',
+        ];
+        
+        $results = [];
+        foreach ($taxonomies as $key => $url) {
+            $data = $api->post($url, []);
+            if (!empty($data[$key])) {
+                $this->log('Taxonomie ' . $key . ' : ' . count($data[$key]) . ' éléments.');
+                $results[$key] = $data[$key];
+            }
+        }
+        
+        // Stockage en base
+        update_option('whise_taxonomies_full', $results);
+        return $results;
+    }
+
+    /**
+     * Trouve le nom d'une taxonomie Whise à partir de son ID dans la liste complète
+     */
+    private function find_whise_taxonomy_name($id, $list) {
+        if (!$id || !$list) return '';
+        foreach ($list as $item) {
+            if ((string)$item['id'] === (string)$id) {
+                return $item['displayName'] ?? $item['name'] ?? '';
+            }
+        }
+        return '';
+    }
+
+    /**
      * Lance la synchronisation batch des propriétés depuis l'API Whise
      */
     public function sync_properties_batch() {
         $this->log('--- Début synchronisation Whise : ' . date('Y-m-d H:i:s'));
+        
+        // Mise à jour des taxonomies avant l'import
+        $this->fetch_and_store_whise_taxonomies();
+        
         $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
         $api = new Whise_API($endpoint);
         $page = 1;
@@ -243,6 +295,9 @@ class Whise_Sync_Manager {
         if (empty($property['id'])) return;
         $whise_id = $property['id'];
         
+        // Récupération des taxonomies stockées
+        $whise_taxonomies = get_option('whise_taxonomies_full', []);
+        
         // Traitement des détails
         $details = [];
         if (!empty($property['details'])) {
@@ -274,6 +329,7 @@ class Whise_Sync_Manager {
         // Traitement des descriptions
         $short_description = '';
         $sms_description = '';
+        $long_description = '';
         if (!empty($property['shortDescription'])) {
             foreach ($property['shortDescription'] as $desc) {
                 if ($desc['languageId'] === 'fr-BE') {
@@ -286,6 +342,14 @@ class Whise_Sync_Manager {
             foreach ($property['sms'] as $sms) {
                 if ($sms['languageId'] === 'fr-BE') {
                     $sms_description = $sms['content'];
+                    break;
+                }
+            }
+        }
+        if (!empty($property['description'])) {
+            foreach ($property['description'] as $desc) {
+                if ($desc['languageId'] === 'fr-BE') {
+                    $long_description = $desc['content'];
                     break;
                 }
             }
@@ -321,9 +385,16 @@ class Whise_Sync_Manager {
             'bedrooms' => $property['bedrooms'] ?? 0,
             
             // Type et statut
-            'property_type' => $property['category']['id'] ?? '',
-            'transaction_type' => $property['purpose']['id'] ?? '',
-            'status' => $property['status']['id'] ?? '',
+            'property_type' => $property['category']['displayName'] ?? $property['category']['name'] ?? '',
+            'property_type_id' => $property['category']['id'] ?? '',
+            'property_type_language' => $property['category']['languageId'] ?? '',
+            'transaction_type' => $property['purpose']['displayName'] ?? $property['purpose']['name'] ?? '',
+            'transaction_type_id' => $property['purpose']['id'] ?? '',
+            'transaction_type_language' => $property['purpose']['languageId'] ?? '',
+            'status' => $property['status']['displayName'] ?? $property['status']['name'] ?? '',
+            'status_id' => $property['status']['id'] ?? '',
+            'status_language' => $property['status']['languageId'] ?? '',
+            'sub_categories' => $property['subCategories'] ?? [],
             'construction_year' => $this->findDetailValueById($details, 14) ?? 0, // Année de construction
             'renovation_year' => $this->findDetailValueById($details, 585) ?? 0, // Année de rénovation
             
@@ -435,7 +506,8 @@ class Whise_Sync_Manager {
         $postarr = [
             'post_type' => 'property',
             'post_title' => $property['name'] ?? ($property['referenceNumber'] ?? ''),
-            'post_content' => $short_description,
+            'post_content' => $long_description ?: $short_description,
+            'post_excerpt' => $short_description,
             'post_status' => 'publish',
         ];
         
@@ -455,18 +527,44 @@ class Whise_Sync_Manager {
             update_post_meta($post_id, $key, $converted_value);
         }
 
-        // Mise à jour des taxonomies
-        if (!empty($property['category']['id'])) {
-            wp_set_object_terms($post_id, $property['category']['id'], 'property_type', false);
+        // Mise à jour des taxonomies (on utilise displayName en priorité)
+        $category = $property['category'] ?? [];
+        $category_name = $category['displayName'] 
+            ?? $this->find_whise_taxonomy_name($category['id'] ?? '', $whise_taxonomies['categories'] ?? [])
+            ?? $category['name'] 
+            ?? '';
+        if ($category_name) {
+            wp_set_object_terms($post_id, $category_name, 'property_type', false);
         }
-        if (!empty($property['purpose']['id'])) {
-            wp_set_object_terms($post_id, $property['purpose']['id'], 'transaction_type', false);
+        
+        $purpose_name = $property['purpose']['displayName']
+            ?? $this->find_whise_taxonomy_name($property['purpose']['id'] ?? '', $whise_taxonomies['purposes'] ?? [])
+            ?? $property['purpose']['name']
+            ?? '';
+        if ($purpose_name) {
+            wp_set_object_terms($post_id, $purpose_name, 'transaction_type', false);
         }
+        
         if (!empty($property['city'])) {
             wp_set_object_terms($post_id, $property['city'], 'property_city', false);
         }
-        if (!empty($property['status']['id'])) {
-            wp_set_object_terms($post_id, $property['status']['id'], 'property_status', false);
+        
+        $status_name = $property['status']['displayName']
+            ?? $this->find_whise_taxonomy_name($property['status']['id'] ?? '', $whise_taxonomies['statuses'] ?? [])
+            ?? $property['status']['name']
+            ?? '';
+        if ($status_name) {
+            wp_set_object_terms($post_id, $status_name, 'property_status', false);
+        }
+        
+        // Gestion des sous-catégories
+        if (!empty($property['subCategories'])) {
+            foreach ($property['subCategories'] as $subCategory) {
+                $sub_name = $subCategory['displayName'] ?? $subCategory['name'] ?? '';
+                if ($sub_name) {
+                    wp_set_object_terms($post_id, $sub_name, 'property_type', true); // true pour ajouter, ne pas remplacer
+                }
+            }
         }
     }
 }

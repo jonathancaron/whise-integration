@@ -57,7 +57,7 @@ class Whise_Property_CPT {
             'labels' => $labels,
             'public' => true,
             'show_ui' => true,
-            'show_in_menu' => true,
+            'show_in_menu' => false,
             'show_in_rest' => true,
             'rest_base' => 'properties',
             'rest_controller_class' => 'WP_REST_Posts_Controller',
@@ -138,11 +138,11 @@ class Whise_Property_CPT {
                 'search_items' => __('Rechercher des types', 'whise-integration')
             ],
             'public' => true,
-            'show_ui' => true,
-            'show_in_menu' => true,
-            'show_in_nav_menus' => true,
-            'show_in_rest' => true,
-            'show_admin_column' => true,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_nav_menus' => false,
+            'show_in_rest' => false,
+            'show_admin_column' => false,
             'hierarchical' => true,
             'query_var' => true,
             'rewrite' => ['slug' => 'type-bien', 'with_front' => false],
@@ -157,11 +157,11 @@ class Whise_Property_CPT {
         register_taxonomy('transaction_type', 'property', [
             'label' => __('Type de transaction', 'whise-integration'),
             'public' => true,
-            'show_ui' => true,
-            'show_in_menu' => true,
-            'show_in_rest' => true,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_rest' => false,
             'hierarchical' => true,
-            'show_admin_column' => true,
+            'show_admin_column' => false,
             'rewrite' => ['slug' => 'type-transaction', 'with_front' => false],
         ]);
         // property_city
@@ -179,11 +179,11 @@ class Whise_Property_CPT {
         register_taxonomy('property_status', 'property', [
             'label' => __('Statut', 'whise-integration'),
             'public' => true,
-            'show_ui' => true,
-            'show_in_menu' => true,
-            'show_in_rest' => true,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_rest' => false,
             'hierarchical' => true,
-            'show_admin_column' => true,
+            'show_admin_column' => false,
             'rewrite' => ['slug' => 'statut', 'with_front' => false],
         ]);
     }
