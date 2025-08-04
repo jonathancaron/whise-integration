@@ -200,7 +200,6 @@ class Whise_Debug {
         add_shortcode('whise_debug', [__CLASS__, 'shortcode_debug']);
         add_shortcode('whise_debug_stats', [__CLASS__, 'shortcode_debug_stats']);
         add_shortcode('whise_debug_fields', [__CLASS__, 'shortcode_debug_fields']);
-        add_shortcode('whise_diagnostic', [__CLASS__, 'shortcode_diagnostic']);
     }
     
     public static function shortcode_debug($atts) {
@@ -219,93 +218,6 @@ class Whise_Debug {
     public static function shortcode_debug_fields($atts) {
         ob_start();
         self::debug_elementor_fields();
-        return ob_get_clean();
-    }
-    
-    /**
-     * Diagnostic complet du plugin
-     */
-    public static function diagnostic_plugin() {
-        echo '<div style="background: #f0f0f0; padding: 20px; margin: 20px 0; border: 1px solid #ccc;">';
-        echo '<h3>Diagnostic complet du plugin Whise Integration</h3>';
-        
-        // Vérification du post type
-        $post_type_exists = post_type_exists('property');
-        echo '<h4>Post Type "property":</h4>';
-        echo '<p>' . ($post_type_exists ? '✅ Enregistré' : '❌ Non enregistré') . '</p>';
-        
-        if ($post_type_exists) {
-            $post_type_obj = get_post_type_object('property');
-            echo '<ul>';
-            echo '<li>Public: ' . ($post_type_obj->public ? '✅' : '❌') . '</li>';
-            echo '<li>Show UI: ' . ($post_type_obj->show_ui ? '✅' : '❌') . '</li>';
-            echo '<li>Show in Menu: ' . ($post_type_obj->show_in_menu ? '✅' : '❌') . '</li>';
-            echo '<li>Show in REST: ' . ($post_type_obj->show_in_rest ? '✅' : '❌') . '</li>';
-            echo '</ul>';
-        }
-        
-        // Vérification des taxonomies
-        echo '<h4>Taxonomies:</h4>';
-        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status'];
-        foreach ($taxonomies as $taxonomy) {
-            $exists = taxonomy_exists($taxonomy);
-            echo '<p>' . $taxonomy . ': ' . ($exists ? '✅ Enregistrée' : '❌ Non enregistrée') . '</p>';
-            
-            if ($exists) {
-                $taxonomy_obj = get_taxonomy($taxonomy);
-                echo '<ul>';
-                echo '<li>Public: ' . ($taxonomy_obj->public ? '✅' : '❌') . '</li>';
-                echo '<li>Show UI: ' . ($taxonomy_obj->show_ui ? '✅' : '❌') . '</li>';
-                echo '<li>Show in Menu: ' . ($taxonomy_obj->show_in_menu ? '✅' : '❌') . '</li>';
-                echo '</ul>';
-            }
-        }
-        
-        // Vérification des classes
-        echo '<h4>Classes du plugin:</h4>';
-        $classes = ['Whise_Property_CPT', 'Whise_Admin', 'Whise_Sync_Manager', 'Whise_API'];
-        foreach ($classes as $class) {
-            echo '<p>' . $class . ': ' . (class_exists($class) ? '✅ Chargée' : '❌ Non chargée') . '</p>';
-        }
-        
-        // Vérification des constantes
-        echo '<h4>Constantes:</h4>';
-        echo '<p>WHISE_PLUGIN_URL: ' . (defined('WHISE_PLUGIN_URL') ? '✅ Définie' : '❌ Non définie') . '</p>';
-        echo '<p>WHISE_PLUGIN_PATH: ' . (defined('WHISE_PLUGIN_PATH') ? '✅ Définie' : '❌ Non définie') . '</p>';
-        
-        // Vérification des règles de réécriture
-        echo '<h4>Règles de réécriture:</h4>';
-        $rewrite_rules = get_option('rewrite_rules');
-        echo '<p>Règles de réécriture: ' . (!empty($rewrite_rules) ? '✅ Présentes' : '❌ Absentes') . '</p>';
-        
-        // Vérification des propriétés
-        if ($post_type_exists) {
-            $properties = get_posts([
-                'post_type' => 'property',
-                'post_status' => 'any',
-                'numberposts' => -1
-            ]);
-            echo '<h4>Propriétés:</h4>';
-            echo '<p>Total: ' . count($properties) . '</p>';
-            
-            if (!empty($properties)) {
-                $published = 0;
-                $draft = 0;
-                foreach ($properties as $property) {
-                    if ($property->post_status === 'publish') $published++;
-                    else $draft++;
-                }
-                echo '<p>Publiées: ' . $published . '</p>';
-                echo '<p>Brouillons: ' . $draft . '</p>';
-            }
-        }
-        
-        echo '</div>';
-    }
-    
-    public static function shortcode_diagnostic($atts) {
-        ob_start();
-        self::diagnostic_plugin();
         return ob_get_clean();
     }
 }

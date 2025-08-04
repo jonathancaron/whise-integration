@@ -9,6 +9,9 @@
 
 if (!defined('ABSPATH')) exit;
 
+if (!defined('WHISE_PLUGIN_FILE')) {
+    define('WHISE_PLUGIN_FILE', __FILE__);
+}
 // Définition des constantes
 define('WHISE_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('WHISE_PLUGIN_PATH', plugin_dir_path(__FILE__));
@@ -93,8 +96,14 @@ class Whise_Integration {
     }
 }
 
-// Initialisation du plugin seulement si les classes sont disponibles
-if (class_exists('Whise_Property_CPT') && class_exists('Whise_Admin')) {
+
+// Instancie d'abord le CPT pour garantir l'enregistrement du post type et des taxonomies
+if (class_exists('Whise_Property_CPT')) {
+    new Whise_Property_CPT();
+}
+
+// Puis le plugin principal
+if (class_exists('Whise_Admin')) {
     new Whise_Integration();
 }
 

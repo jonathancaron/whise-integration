@@ -105,12 +105,6 @@ error_log('Whise Integration: Message d\'erreur');
 [whise_properties limit="5"]
 [whise_property id="123"]
 [whise_search]
-
-// Shortcodes de diagnostic :
-[whise_debug_stats]           // Statistiques d'import
-[whise_debug_fields]          // Champs disponibles pour Elementor
-[whise_debug id="123"]        // Debug d'une propriété spécifique
-[whise_diagnostic]            // Diagnostic complet du plugin
 ```
 
 ### **3. Test de l'API**

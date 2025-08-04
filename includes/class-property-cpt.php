@@ -3,15 +3,39 @@ if (!defined('ABSPATH')) exit;
 
 class Whise_Property_CPT {
     public function __construct() {
-        add_action('init', [$this, 'register_post_type']);
-        add_action('init', [$this, 'register_taxonomies']);
-        add_action('init', [$this, 'register_meta_fields']);
-        // Pour initialiser les termes par défaut à l'activation
-        add_action('whise_init_default_terms', [$this, 'init_default_terms']);
-        // Force la réinitialisation des taxonomies si nécessaire
-        add_action('admin_init', [$this, 'check_taxonomies_visibility']);
-        // Hook pour forcer la réinitialisation lors de l'activation
-        add_action('whise_force_reset', [$this, 'force_taxonomies_reset']);
+        // Enregistrement dans le bon ordre sur 'init' (taxonomies, post type, meta fields, termes)
+        add_action('init', [$this, 'register_taxonomies'], 0);
+        add_action('init', [$this, 'register_post_type'], 1);
+        add_action('init', [$this, 'register_meta_fields'], 2);
+        add_action('init', [$this, 'init_default_terms'], 3);
+
+        // Hook d'activation pour tout forcer
+        if (defined('WHISE_PLUGIN_FILE')) {
+            register_activation_hook(WHISE_PLUGIN_FILE, [$this, 'on_activation']);
+        }
+
+        // Diagnostic admin si problème
+        add_action('admin_notices', [$this, 'admin_diagnostic_notice']);
+    }
+
+    public function on_activation() {
+        // Enregistre tout et flush
+        $this->register_taxonomies();
+        $this->register_post_type();
+        $this->register_meta_fields();
+        $this->init_default_terms();
+        flush_rewrite_rules();
+    }
+
+    public function admin_diagnostic_notice() {
+        $missing = [];
+        if (!post_type_exists('property')) $missing[] = 'Post type "property"';
+        foreach(['property_type','transaction_type','property_city','property_status'] as $tax) {
+            if (!taxonomy_exists($tax)) $missing[] = 'Taxonomie "'.$tax.'"';
+        }
+        if (!empty($missing)) {
+            echo '<div class="notice notice-error"><p><strong>Whise Integration:</strong> Problème d\'enregistrement : '.implode(', ', $missing).'.<br>Essayez de désactiver/réactiver le plugin et de sauvegarder les permaliens.</p></div>';
+        }
     }
 
     public function register_post_type() {
@@ -35,12 +59,16 @@ class Whise_Property_CPT {
             'show_ui' => true,
             'show_in_menu' => true,
             'show_in_rest' => true,
-            'supports' => ['title', 'editor', 'thumbnail', 'custom-fields'],
+            'rest_base' => 'properties',
+            'rest_controller_class' => 'WP_REST_Posts_Controller',
+            'supports' => ['title', 'editor', 'thumbnail', 'custom-fields', 'excerpt'],
             'has_archive' => true,
             'hierarchical' => false,
             'menu_icon' => 'dashicons-building',
             'menu_position' => 20,
             'capability_type' => 'post',
+            'show_in_nav_menus' => true,
+            'show_in_admin_bar' => true,
             'rewrite' => [
                 'slug' => 'biens/%property_city%/%property_type%',
                 'with_front' => false
@@ -97,14 +125,34 @@ class Whise_Property_CPT {
         // property_type
         register_taxonomy('property_type', 'property', [
             'label' => __('Type de bien', 'whise-integration'),
+            'labels' => [
+                'name' => __('Types de bien', 'whise-integration'),
+                'singular_name' => __('Type de bien', 'whise-integration'),
+                'menu_name' => __('Types de bien', 'whise-integration'),
+                'all_items' => __('Tous les types', 'whise-integration'),
+                'edit_item' => __('Modifier le type', 'whise-integration'),
+                'view_item' => __('Voir le type', 'whise-integration'),
+                'update_item' => __('Mettre à jour le type', 'whise-integration'),
+                'add_new_item' => __('Ajouter un type', 'whise-integration'),
+                'new_item_name' => __('Nouveau type', 'whise-integration'),
+                'search_items' => __('Rechercher des types', 'whise-integration')
+            ],
             'public' => true,
             'show_ui' => true,
             'show_in_menu' => true,
+            'show_in_nav_menus' => true,
             'show_in_rest' => true,
-            'hierarchical' => false,
-            'rewrite' => ['slug' => 'type-bien'],
+            'show_admin_column' => true,
+            'hierarchical' => true,
+            'query_var' => true,
+            'rewrite' => ['slug' => 'type-bien', 'with_front' => false],
+            'capabilities' => [
+                'manage_terms' => 'manage_categories',
+                'edit_terms' => 'manage_categories',
+                'delete_terms' => 'manage_categories',
+                'assign_terms' => 'edit_posts'
+            ]
         ]);
-        
         // transaction_type
         register_taxonomy('transaction_type', 'property', [
             'label' => __('Type de transaction', 'whise-integration'),
@@ -112,10 +160,10 @@ class Whise_Property_CPT {
             'show_ui' => true,
             'show_in_menu' => true,
             'show_in_rest' => true,
-            'hierarchical' => false,
-            'rewrite' => ['slug' => 'type-transaction'],
+            'hierarchical' => true,
+            'show_admin_column' => true,
+            'rewrite' => ['slug' => 'type-transaction', 'with_front' => false],
         ]);
-        
         // property_city
         register_taxonomy('property_city', 'property', [
             'label' => __('Ville', 'whise-integration'),
@@ -123,10 +171,10 @@ class Whise_Property_CPT {
             'show_ui' => true,
             'show_in_menu' => true,
             'show_in_rest' => true,
-            'hierarchical' => false,
-            'rewrite' => ['slug' => 'ville'],
+            'hierarchical' => true,
+            'show_admin_column' => true,
+            'rewrite' => ['slug' => 'ville', 'with_front' => false],
         ]);
-        
         // property_status
         register_taxonomy('property_status', 'property', [
             'label' => __('Statut', 'whise-integration'),
@@ -134,8 +182,9 @@ class Whise_Property_CPT {
             'show_ui' => true,
             'show_in_menu' => true,
             'show_in_rest' => true,
-            'hierarchical' => false,
-            'rewrite' => ['slug' => 'statut'],
+            'hierarchical' => true,
+            'show_admin_column' => true,
+            'rewrite' => ['slug' => 'statut', 'with_front' => false],
         ]);
     }
 
@@ -143,11 +192,17 @@ class Whise_Property_CPT {
      * Enregistre les meta fields obligatoires pour le CPT property et les expose à l'API REST
      */
     public function register_meta_fields() {
-        // Définition des types de champs
+        // Définition des types de champs avec leur type réel pour l'API REST
         $field_types = [
-            'string' => ['whise_id', 'reference', 'address', 'city', 'postal_code', 'country', 'description', 'description_short'],
-            'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 'rooms', 'bathrooms', 'floors', 'construction_year'],
-            'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic'],
+            'string' => ['whise_id', 'reference', 'address', 'city', 'postal_code', 'country', 'description', 'description_short',
+                        'price_formatted', 'price_type', 'price_supplement', 'price_conditions', 'property_type', 
+                        'transaction_type', 'status', 'energy_class', 'heating_type', 'kitchen_type',
+                        'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
+                        'orientation', 'view', 'availability', 'available_date'],
+            'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 
+                        'rooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income'],
+            'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 
+                         'swimming_pool', 'elevator', 'cellar', 'attic'],
             'array' => ['images', 'details'],
             'float' => ['latitude', 'longitude']
         ];
@@ -233,15 +288,38 @@ class Whise_Property_CPT {
             'latitude' => 'Coordonnée GPS',
             'longitude' => 'Coordonnée GPS',
         ];
-        foreach ($fields as $key => $desc) {
-            register_post_meta('property', $key, [
+        foreach ($fields as $key => $field_info) {
+            // Déterminer le type réel pour l'API REST
+            $type = 'string'; // Type par défaut
+            foreach ($field_types as $field_type => $fields) {
+                if (in_array($key, $fields)) {
+                    $type = $field_type;
+                    break;
+                }
+            }
+            
+            // Configuration de base pour tous les champs
+            $args = [
                 'show_in_rest' => true,
                 'single' => true,
-                'type' => 'string',
-                'description' => $desc,
+                'type' => $type,
+                'description' => $field_info['desc'] ?? '',
                 'auth_callback' => function() { return true; },
                 'sanitize_callback' => [$this, 'sanitize_meta_value'],
-            ]);
+            ];
+
+            // Ajustements spécifiques par type
+            if ($type === 'array') {
+                $args['type'] = 'string'; // Les arrays sont stockés comme strings sérialisés
+                $args['show_in_rest'] = [
+                    'schema' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string']
+                    ]
+                ];
+            }
+
+            register_post_meta('property', $key, $args);
         }
     }
 
@@ -311,30 +389,44 @@ class Whise_Property_CPT {
     }
     
     /**
-     * Force la réinitialisation complète du post type et des taxonomies
+     * Force la réinitialisation complète des taxonomies
      */
     public function force_taxonomies_reset() {
-        // Désenregistrer le post type existant
-        unregister_post_type('property');
+        global $wpdb;
         
-        // Désenregistrer les taxonomies existantes
-        unregister_taxonomy('property_type');
-        unregister_taxonomy('transaction_type');
-        unregister_taxonomy('property_city');
-        unregister_taxonomy('property_status');
+        // Supprime d'abord toutes les données des taxonomies
+        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status'];
         
-        // Réenregistrer le post type
-        $this->register_post_type();
+        // Supprime les termes et relations
+        foreach($taxonomies as $taxonomy) {
+            $term_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT t.term_id FROM {$wpdb->terms} AS t 
+                INNER JOIN {$wpdb->term_taxonomy} AS tt ON t.term_id = tt.term_id 
+                WHERE tt.taxonomy = %s",
+                $taxonomy
+            ));
+            
+            if (!empty($term_ids)) {
+                $wpdb->query("DELETE FROM {$wpdb->term_relationships} WHERE term_taxonomy_id IN (SELECT term_taxonomy_id FROM {$wpdb->term_taxonomy} WHERE taxonomy = '{$taxonomy}')");
+                $wpdb->query("DELETE FROM {$wpdb->term_taxonomy} WHERE taxonomy = '{$taxonomy}'");
+                $wpdb->query("DELETE FROM {$wpdb->terms} WHERE term_id IN (" . implode(',', $term_ids) . ")");
+            }
+            
+            // Désenregistre la taxonomie
+            unregister_taxonomy($taxonomy);
+        }
         
-        // Réenregistrer les taxonomies
+        // Vide le cache
+        clean_term_cache($term_ids, '', false);
+        delete_option($taxonomy . '_children');
+        
+        // Réenregistre tout
         $this->register_taxonomies();
-        
-        // Initialiser les termes par défaut
         $this->init_default_terms();
         
-        // Flush les règles de réécriture
-        flush_rewrite_rules();
+        // Force la mise à jour des règles de réécriture
+        flush_rewrite_rules(true);
         
-        error_log('Whise Integration: Réinitialisation complète du post type et des taxonomies effectuée');
+        return true;
     }
 }

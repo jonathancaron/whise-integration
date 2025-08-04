@@ -41,6 +41,26 @@ class Whise_Admin {
             'whise-integration-stats',
             [$this, 'stats_page']
         );
+        
+        // Ajouter un lien vers les propriétés
+        add_submenu_page(
+            'whise-integration',
+            __('Propriétés', 'whise-integration'),
+            __('Propriétés', 'whise-integration'),
+            'manage_options',
+            'edit.php?post_type=property',
+            null
+        );
+        
+        // Ajouter un lien vers l'ajout d'une nouvelle propriété
+        add_submenu_page(
+            'whise-integration',
+            __('Ajouter une propriété', 'whise-integration'),
+            __('Ajouter une propriété', 'whise-integration'),
+            'manage_options',
+            'post-new.php?post_type=property',
+            null
+        );
     }
 
     public function register_settings() {
@@ -576,6 +596,7 @@ class Whise_Admin {
             delete_option('whise_debug_mode');
             delete_option('whise_last_sync');
             delete_option('whise_sync_logs');
+            delete_option('whise_last_visibility_check');
 
             // Supprimer les taxonomies personnalisées
             $taxonomies_to_delete = [
