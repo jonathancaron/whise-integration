@@ -3,7 +3,7 @@
 Plugin Name: Whise Integration
 Description: Intégration professionnelle de l'API Whise pour WordPress, compatible Elementor Pro.
 Version: 1.0.0
-Author: Votre Nom
+Author: Jonathan Caron
 Text Domain: whise-integration
 Domain Path: /languages
 */

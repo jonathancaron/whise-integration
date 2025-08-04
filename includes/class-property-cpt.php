@@ -111,21 +111,92 @@ class Whise_Property_CPT {
      * Enregistre les meta fields obligatoires pour le CPT property et les expose à l'API REST
      */
     public function register_meta_fields() {
+        // Définition des types de champs
+        $field_types = [
+            'string' => ['whise_id', 'reference', 'address', 'city', 'postal_code', 'country', 'description', 'description_short'],
+            'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 'rooms', 'bathrooms', 'floors', 'construction_year'],
+            'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic'],
+            'array' => ['images', 'details'],
+            'float' => ['latitude', 'longitude']
+        ];
+        
         $fields = [
-            'whise_id' => 'ID Whise unique',
-            'price' => 'Prix (numérique)',
-            'price_formatted' => 'Prix formaté (€350.000)',
-            'surface' => 'Surface (m²)',
-            'rooms' => 'Nombre de chambres',
-            'bathrooms' => 'Nombre de SDB',
-            'property_type' => 'Type (appartement/maison/bureau)',
-            'transaction_type' => 'Vente/Location',
-            'address' => 'Adresse complète',
-            'city' => 'Ville',
-            'postal_code' => 'Code postal',
-            'description' => 'Description détaillée',
-            'energy_class' => 'Classe énergétique',
-            'available_date' => 'Date de disponibilité',
+            // Identifiants
+            'whise_id' => ['desc' => 'ID Whise unique', 'type' => 'string'],
+            'reference' => ['desc' => 'Référence du bien', 'type' => 'string'],
+            
+            // Prix et conditions
+            'price' => ['desc' => 'Prix (numérique)', 'type' => 'number'],
+            'price_formatted' => ['desc' => 'Prix formaté (€350.000)', 'type' => 'string'],
+            'price_type' => ['desc' => 'Type de prix (vente/location)', 'type' => 'string'],
+            'price_supplement' => ['desc' => 'Supplément de prix', 'type' => 'string'],
+            'charges' => ['desc' => 'Charges mensuelles', 'type' => 'number'],
+            'price_conditions' => ['desc' => 'Conditions de prix', 'type' => 'string'],
+            
+            // Surfaces
+            'surface' => ['desc' => 'Surface habitable (m²)', 'type' => 'number'],
+            'total_area' => ['desc' => 'Surface totale (m²)', 'type' => 'number'],
+            'land_area' => ['desc' => 'Surface terrain (m²)', 'type' => 'number'],
+            'commercial_area' => ['desc' => 'Surface commerciale (m²)', 'type' => 'number'],
+            'built_area' => ['desc' => 'Surface bâtie (m²)', 'type' => 'number'],
+            
+            // Pièces
+            'rooms' => ['desc' => 'Nombre de chambres', 'type' => 'number'],
+            'bathrooms' => ['desc' => 'Nombre de SDB', 'type' => 'number'],
+            'floors' => ['desc' => 'Nombre d\'étages', 'type' => 'number'],
+            
+            // Type et statut
+            'property_type' => ['desc' => 'Type (appartement/maison/bureau)', 'type' => 'string'],
+            'transaction_type' => ['desc' => 'Vente/Location', 'type' => 'string'],
+            'status' => ['desc' => 'Statut du bien', 'type' => 'string'],
+            'construction_year' => ['desc' => 'Année de construction', 'type' => 'number'],
+            
+            // Localisation
+            'address' => ['desc' => 'Adresse complète', 'type' => 'string'],
+            'city' => ['desc' => 'Ville', 'type' => 'string'],
+            'postal_code' => ['desc' => 'Code postal', 'type' => 'string'],
+            'country' => ['desc' => 'Pays', 'type' => 'string'],
+            'latitude' => ['desc' => 'Latitude', 'type' => 'float'],
+            'longitude' => ['desc' => 'Longitude', 'type' => 'float'],
+            
+            // Descriptions
+            'description' => ['desc' => 'Description détaillée', 'type' => 'string'],
+            'description_short' => ['desc' => 'Description courte', 'type' => 'string'],
+            
+            // Énergie
+            'energy_class' => ['desc' => 'Classe énergétique', 'type' => 'string'],
+            'epc_value' => ['desc' => 'Valeur PEB', 'type' => 'number'],
+            'heating_type' => ['desc' => 'Type de chauffage', 'type' => 'string'],
+            
+            // Données cadastrales
+            'cadastral_income' => ['desc' => 'Revenu cadastral', 'type' => 'number'],
+            'cadastral_data' => ['desc' => 'Données cadastrales', 'type' => 'string'],
+            
+            // Équipements 
+            'kitchen_type' => ['desc' => 'Type de cuisine', 'type' => 'string'],
+            'parking' => ['desc' => 'Parking', 'type' => 'boolean'],
+            'garage' => ['desc' => 'Garage', 'type' => 'boolean'],
+            'terrace' => ['desc' => 'Terrasse', 'type' => 'boolean'],
+            'garden' => ['desc' => 'Jardin', 'type' => 'boolean'],
+            'swimming_pool' => ['desc' => 'Piscine', 'type' => 'boolean'],
+            'elevator' => ['desc' => 'Ascenseur', 'type' => 'boolean'],
+            'cellar' => ['desc' => 'Cave', 'type' => 'boolean'],
+            'attic' => ['desc' => 'Grenier', 'type' => 'boolean'],
+            
+            // Proximité
+            'proximity_school' => ['desc' => 'Proximité écoles', 'type' => 'string'],
+            'proximity_shops' => ['desc' => 'Proximité commerces', 'type' => 'string'],
+            'proximity_transport' => ['desc' => 'Proximité transports', 'type' => 'string'],
+            'proximity_hospital' => ['desc' => 'Proximité hôpital', 'type' => 'string'],
+            
+            // Disponibilité
+            'availability' => ['desc' => 'Disponibilité', 'type' => 'string'],
+            'is_immediately_available' => ['desc' => 'Disponible immédiatement', 'type' => 'boolean'],
+            'available_date' => ['desc' => 'Date de disponibilité', 'type' => 'string'],
+            
+            // Orientation et vues
+            'orientation' => ['desc' => 'Orientation', 'type' => 'string'],
+            'view' => ['desc' => 'Vue', 'type' => 'string'],
             'images' => 'URLs des images (sérialisé)',
             'latitude' => 'Coordonnée GPS',
             'longitude' => 'Coordonnée GPS',
