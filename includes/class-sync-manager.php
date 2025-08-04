@@ -312,6 +312,7 @@ class Whise_Sync_Manager {
         
         // Récupération des taxonomies stockées
         $whise_taxonomies = get_option('whise_taxonomies_full', []);
+        $this->log('DEBUG - Property ' . $whise_id . ' - available taxonomies: ' . json_encode(array_keys($whise_taxonomies)));
         
         // Traitement des détails
         $details = [];
@@ -622,32 +623,67 @@ class Whise_Sync_Manager {
 
         // Mise à jour des taxonomies (on utilise displayName en priorité)
         $category = $property['category'] ?? [];
-        $category_name = $category['displayName'] 
-            ?? $this->find_whise_taxonomy_name($category['id'] ?? '', $whise_taxonomies['categories'] ?? [])
-            ?? $category['name'] 
-            ?? '';
-        if ($category_name) {
-            wp_set_object_terms($post_id, $category_name, 'property_type', false);
+        $category_id = $category['id'] ?? '';
+        $category_name = $category['displayName'] ?? '';
+        if (empty($category_name)) {
+            $category_name = $this->find_whise_taxonomy_name($category_id, $whise_taxonomies['categories'] ?? []);
+        }
+        if (empty($category_name)) {
+            $category_name = $category['name'] ?? '';
+        }
+        if (empty($category_name)) {
+            $category_name = $this->get_default_category_name($category_id);
+            if ($category_name) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - using default category name: ' . $category_name . ' for ID: ' . $category_id);
+            }
         }
         
-        $purpose_name = $property['purpose']['displayName']
-            ?? $this->find_whise_taxonomy_name($property['purpose']['id'] ?? '', $whise_taxonomies['purposes'] ?? [])
-            ?? $property['purpose']['name']
-            ?? '';
+        $this->log('DEBUG - Property ' . $whise_id . ' - category data: ' . json_encode($category));
+        $this->log('DEBUG - Property ' . $whise_id . ' - category_name resolved: ' . $category_name);
+        
+        if ($category_name) {
+            wp_set_object_terms($post_id, $category_name, 'property_type', false);
+            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_type: ' . $category_name);
+        } else {
+            $this->log('DEBUG - Property ' . $whise_id . ' - NO category name found');
+        }
+        
+        $purpose = $property['purpose'] ?? [];
+        $purpose_id = $purpose['id'] ?? '';
+        $purpose_name = $purpose['displayName'] ?? '';
+        if (empty($purpose_name)) {
+            $purpose_name = $this->find_whise_taxonomy_name($purpose_id, $whise_taxonomies['purposes'] ?? []);
+        }
+        if (empty($purpose_name)) {
+            $purpose_name = $purpose['name'] ?? '';
+        }
+        if (empty($purpose_name)) {
+            $purpose_name = $this->get_default_purpose_name($purpose_id);
+        }
         if ($purpose_name) {
             wp_set_object_terms($post_id, $purpose_name, 'transaction_type', false);
+            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to transaction_type: ' . $purpose_name);
         }
         
         if (!empty($property['city'])) {
             wp_set_object_terms($post_id, $property['city'], 'property_city', false);
         }
         
-        $status_name = $property['status']['displayName']
-            ?? $this->find_whise_taxonomy_name($property['status']['id'] ?? '', $whise_taxonomies['statuses'] ?? [])
-            ?? $property['status']['name']
-            ?? '';
+        $status = $property['status'] ?? [];
+        $status_id = $status['id'] ?? '';
+        $status_name = $status['displayName'] ?? '';
+        if (empty($status_name)) {
+            $status_name = $this->find_whise_taxonomy_name($status_id, $whise_taxonomies['statuses'] ?? []);
+        }
+        if (empty($status_name)) {
+            $status_name = $status['name'] ?? '';
+        }
+        if (empty($status_name)) {
+            $status_name = $this->get_default_status_name($status_id);
+        }
         if ($status_name) {
             wp_set_object_terms($post_id, $status_name, 'property_status', false);
+            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_status: ' . $status_name);
         }
         
         // Gestion des sous-catégories
@@ -659,5 +695,49 @@ class Whise_Sync_Manager {
                 }
             }
         }
+    }
+
+    /**
+     * Retourne un nom de catégorie par défaut basé sur l'ID Whise
+     */
+    private function get_default_category_name($category_id) {
+        $default_categories = [
+            '1' => 'Maison',
+            '2' => 'Appartement', 
+            '3' => 'Terrain',
+            '4' => 'Bureau',
+            '5' => 'Commerce',
+            '6' => 'Immeuble',
+            '7' => 'Garage',
+            '8' => 'Autre'
+        ];
+        
+        return $default_categories[(string)$category_id] ?? null;
+    }
+
+    /**
+     * Retourne un nom de transaction par défaut basé sur l'ID Whise
+     */
+    private function get_default_purpose_name($purpose_id) {
+        $default_purposes = [
+            '1' => 'Vente',
+            '2' => 'Location'
+        ];
+        
+        return $default_purposes[(string)$purpose_id] ?? null;
+    }
+
+    /**
+     * Retourne un nom de statut par défaut basé sur l'ID Whise
+     */
+    private function get_default_status_name($status_id) {
+        $default_statuses = [
+            '1' => 'Disponible',
+            '2' => 'Sous option',
+            '3' => 'Vendu/Loué',
+            '4' => 'Retiré'
+        ];
+        
+        return $default_statuses[(string)$status_id] ?? null;
     }
 }

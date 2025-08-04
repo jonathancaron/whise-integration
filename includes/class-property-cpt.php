@@ -163,13 +163,33 @@ class Whise_Property_CPT {
         // transaction_type
         register_taxonomy('transaction_type', 'property', [
             'label' => __('Type de transaction', 'whise-integration'),
+            'labels' => [
+                'name' => __('Types de transaction', 'whise-integration'),
+                'singular_name' => __('Type de transaction', 'whise-integration'),
+                'menu_name' => __('Transactions', 'whise-integration'),
+                'all_items' => __('Toutes les transactions', 'whise-integration'),
+                'edit_item' => __('Modifier la transaction', 'whise-integration'),
+                'view_item' => __('Voir la transaction', 'whise-integration'),
+                'update_item' => __('Mettre à jour la transaction', 'whise-integration'),
+                'add_new_item' => __('Ajouter une transaction', 'whise-integration'),
+                'new_item_name' => __('Nouvelle transaction', 'whise-integration'),
+                'search_items' => __('Rechercher des transactions', 'whise-integration')
+            ],
             'public' => true,
-            'show_ui' => false,
-            'show_in_menu' => false,
-            'show_in_rest' => false,
+            'show_ui' => true,
+            'show_in_menu' => true,
+            'show_in_nav_menus' => true,
+            'show_in_rest' => true,
             'hierarchical' => true,
-            'show_admin_column' => false,
+            'show_admin_column' => true,
+            'query_var' => true,
             'rewrite' => ['slug' => 'type-transaction', 'with_front' => false],
+            'capabilities' => [
+                'manage_terms' => 'manage_categories',
+                'edit_terms' => 'manage_categories',
+                'delete_terms' => 'manage_categories',
+                'assign_terms' => 'edit_posts'
+            ]
         ]);
         // property_city
         register_taxonomy('property_city', 'property', [
@@ -185,13 +205,33 @@ class Whise_Property_CPT {
         // property_status
         register_taxonomy('property_status', 'property', [
             'label' => __('Statut', 'whise-integration'),
+            'labels' => [
+                'name' => __('Statuts', 'whise-integration'),
+                'singular_name' => __('Statut', 'whise-integration'),
+                'menu_name' => __('Statuts', 'whise-integration'),
+                'all_items' => __('Tous les statuts', 'whise-integration'),
+                'edit_item' => __('Modifier le statut', 'whise-integration'),
+                'view_item' => __('Voir le statut', 'whise-integration'),
+                'update_item' => __('Mettre à jour le statut', 'whise-integration'),
+                'add_new_item' => __('Ajouter un statut', 'whise-integration'),
+                'new_item_name' => __('Nouveau statut', 'whise-integration'),
+                'search_items' => __('Rechercher des statuts', 'whise-integration')
+            ],
             'public' => true,
-            'show_ui' => false,
-            'show_in_menu' => false,
-            'show_in_rest' => false,
+            'show_ui' => true,
+            'show_in_menu' => true,
+            'show_in_nav_menus' => true,
+            'show_in_rest' => true,
             'hierarchical' => true,
-            'show_admin_column' => false,
+            'show_admin_column' => true,
+            'query_var' => true,
             'rewrite' => ['slug' => 'statut', 'with_front' => false],
+            'capabilities' => [
+                'manage_terms' => 'manage_categories',
+                'edit_terms' => 'manage_categories',
+                'delete_terms' => 'manage_categories',
+                'assign_terms' => 'edit_posts'
+            ]
         ]);
     }
 
@@ -351,11 +391,13 @@ class Whise_Property_CPT {
                 $new_columns[$key] = $value;
                 $new_columns['reference'] = __('Référence', 'whise-integration');
                 $new_columns['price'] = __('Prix', 'whise-integration');
-                $new_columns['property_type'] = __('Type', 'whise-integration');
-                $new_columns['transaction_type'] = __('Transaction', 'whise-integration');
-                $new_columns['city'] = __('Ville', 'whise-integration');
-                $new_columns['status'] = __('Statut', 'whise-integration');
-            } else {
+                // On utilise les colonnes de taxonomies automatiques de WordPress
+                $new_columns['taxonomy-property_type'] = __('Type', 'whise-integration');
+                $new_columns['taxonomy-transaction_type'] = __('Transaction', 'whise-integration');
+                $new_columns['taxonomy-property_city'] = __('Ville', 'whise-integration');
+                $new_columns['taxonomy-property_status'] = __('Statut', 'whise-integration');
+            } else if (!in_array($key, ['taxonomy-property_type', 'taxonomy-transaction_type', 'taxonomy-property_city', 'taxonomy-property_status'])) {
+                // Éviter les doublons des taxonomies
                 $new_columns[$key] = $value;
             }
         }
@@ -366,28 +408,23 @@ class Whise_Property_CPT {
     /**
      * Affiche le contenu des colonnes personnalisées
      */
-    public function display_custom_columns($column, $post_id) {
-        switch ($column) {
-            case 'reference':
-                echo get_post_meta($post_id, 'reference', true);
-                break;
-            case 'price':
-                echo get_post_meta($post_id, 'price_formatted', true);
-                break;
-            case 'property_type':
-                echo get_post_meta($post_id, 'property_type', true);
-                break;
-            case 'transaction_type':
-                echo get_post_meta($post_id, 'transaction_type', true);
-                break;
-            case 'city':
-                echo get_post_meta($post_id, 'city', true);
-                break;
-            case 'status':
-                echo get_post_meta($post_id, 'status', true);
-                break;
-        }
-    }
+     public function display_custom_columns($column, $post_id) {
+         switch ($column) {
+             case 'reference':
+                 $reference = get_post_meta($post_id, 'reference', true);
+                 echo $reference ?: '—';
+                 break;
+             case 'price':
+                 $price_formatted = get_post_meta($post_id, 'price_formatted', true);
+                 if (!$price_formatted) {
+                     $price = get_post_meta($post_id, 'price', true);
+                     $currency = get_post_meta($post_id, 'currency', true) ?: '€';
+                     $price_formatted = $price ? $currency . number_format($price, 0, ',', ' ') : '—';
+                 }
+                 echo $price_formatted;
+                 break;
+         }
+     }
 
     /**
      * Ajoute la metabox de détails du bien
