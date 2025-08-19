@@ -680,4 +680,121 @@ class Whise_Property_CPT {
         
         return true;
     }
+
+    /**
+     * Fonction utilitaire pour obtenir la galerie d'images WordPress d'une propriété
+     */
+    public static function get_property_gallery($post_id) {
+        $gallery_ids = get_post_meta($post_id, '_whise_gallery_images', true);
+        
+        if (!empty($gallery_ids) && is_array($gallery_ids)) {
+            $gallery = [];
+            foreach ($gallery_ids as $attachment_id) {
+                if (wp_attachment_is_image($attachment_id)) {
+                    $gallery[] = [
+                        'id' => $attachment_id,
+                        'url' => wp_get_attachment_url($attachment_id),
+                        'thumbnail' => wp_get_attachment_image_url($attachment_id, 'thumbnail'),
+                        'medium' => wp_get_attachment_image_url($attachment_id, 'medium'),
+                        'large' => wp_get_attachment_image_url($attachment_id, 'large'),
+                        'title' => get_the_title($attachment_id),
+                        'alt' => get_post_meta($attachment_id, '_wp_attachment_image_alt', true),
+                        'order' => get_post_meta($attachment_id, '_whise_image_order', true)
+                    ];
+                }
+            }
+            return $gallery;
+        }
+        
+        return [];
+    }
+
+    /**
+     * Fonction utilitaire pour obtenir une description dans une langue spécifique
+     */
+    public static function get_property_description($post_id, $field = 'shortDescription', $language = null) {
+        // Utiliser la méthode du sync manager si disponible
+        $sync_manager = new Whise_Sync_Manager();
+        if (method_exists($sync_manager, 'get_description_by_language')) {
+            return $sync_manager->get_description_by_language($post_id, $field, $language);
+        }
+        
+        // Fallback vers les métadonnées
+        $multilingual_data = get_post_meta($post_id, 'descriptions_multilingual', true);
+        
+        if (!$language) {
+            $language = 'fr-BE'; // Langue par défaut
+        }
+        
+        if (is_array($multilingual_data) && isset($multilingual_data[$field][$language])) {
+            return $multilingual_data[$field][$language];
+        }
+        
+        // Fallback vers les champs simples
+        $fallback_field = $field === 'shortDescription' ? 'short_description' : 
+                         ($field === 'sms' ? 'sms_description' : $field);
+        return get_post_meta($post_id, $fallback_field, true);
+    }
+}
+
+/**
+ * Fonctions globales pour faciliter l'utilisation dans les templates
+ */
+
+/**
+ * Obtient la galerie d'images d'une propriété
+ */
+function whise_get_property_gallery($post_id = null) {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+    return Whise_Property_CPT::get_property_gallery($post_id);
+}
+
+/**
+ * Obtient une description d'une propriété dans une langue spécifique
+ */
+function whise_get_property_description($field = 'shortDescription', $language = null, $post_id = null) {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+    return Whise_Property_CPT::get_property_description($post_id, $field, $language);
+}
+
+/**
+ * Affiche la galerie d'images d'une propriété (simple)
+ */
+function whise_display_property_gallery($post_id = null, $size = 'medium') {
+    $gallery = whise_get_property_gallery($post_id);
+    
+    if (!empty($gallery)) {
+        echo '<div class="whise-simple-gallery">';
+        foreach ($gallery as $image) {
+            echo '<div class="whise-gallery-item">';
+            echo '<img src="' . esc_url($image[$size]) . '" alt="' . esc_attr($image['alt']) . '" class="whise-gallery-image">';
+            echo '</div>';
+        }
+        echo '</div>';
+    }
+}
+
+/**
+ * Obtient l'image mise en avant d'une propriété (featured image)
+ */
+function whise_get_property_featured_image($post_id = null, $size = 'medium') {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+    
+    if (has_post_thumbnail($post_id)) {
+        return get_the_post_thumbnail_url($post_id, $size);
+    }
+    
+    // Fallback vers la première image de la galerie
+    $gallery = whise_get_property_gallery($post_id);
+    if (!empty($gallery)) {
+        return $gallery[0][$size] ?? '';
+    }
+    
+    return '';
 }

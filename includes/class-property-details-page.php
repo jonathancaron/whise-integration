@@ -174,6 +174,11 @@ class Whise_Property_Details_Page {
                 'title' => 'Images',
                 'fields' => ['images'],
                 'icon' => 'dashicons-format-gallery'
+            ],
+            'multilingual' => [
+                'title' => 'Descriptions multilingues',
+                'fields' => ['descriptions_multilingual'],
+                'icon' => 'dashicons-translation'
             ]
         ];
 
@@ -190,13 +195,21 @@ class Whise_Property_Details_Page {
                 echo '<div class="whise-field">';
                 echo '<label>' . esc_html(ucfirst(str_replace('_', ' ', $field))) . ':</label>';
                 
-                if ($field === 'images' && is_array($value)) {
-                    echo '<div class="whise-images-grid">';
-                    foreach ($value as $image) {
-                        if (isset($image['medium'])) {
-                            echo '<div class="whise-image">';
-                            echo '<img src="' . esc_url($image['medium']) . '" alt="">';
-                            echo '</div>';
+                if ($field === 'images') {
+                    $this->display_property_gallery($property->ID);
+                } elseif ($field === 'descriptions_multilingual' && is_array($value)) {
+                    echo '<div class="whise-multilingual-descriptions">';
+                    foreach ($value as $desc_type => $languages) {
+                        if (!empty($languages)) {
+                            echo '<h4>' . esc_html(ucfirst(str_replace('_', ' ', $desc_type))) . '</h4>';
+                            foreach ($languages as $lang => $content) {
+                                if (!empty($content)) {
+                                    echo '<div class="whise-description-lang" data-lang="' . esc_attr($lang) . '">';
+                                    echo '<span class="whise-lang-label">' . esc_html($lang) . ':</span>';
+                                    echo '<div class="whise-description-content">' . wp_kses_post($content) . '</div>';
+                                    echo '</div>';
+                                }
+                            }
                         }
                     }
                     echo '</div>';
@@ -216,5 +229,174 @@ class Whise_Property_Details_Page {
         }
         
         echo '</div>';
+    }
+
+    /**
+     * Affiche la galerie d'images d'une propriété avec attachments WordPress
+     */
+    private function display_property_gallery($post_id) {
+        // Récupérer les IDs des attachments de la galerie
+        $gallery_ids = get_post_meta($post_id, '_whise_gallery_images', true);
+        
+        if (!empty($gallery_ids) && is_array($gallery_ids)) {
+            echo '<div class="whise-gallery-container">';
+            echo '<div class="whise-gallery-grid">';
+            
+            foreach ($gallery_ids as $attachment_id) {
+                if (wp_attachment_is_image($attachment_id)) {
+                    $image_data = wp_get_attachment_metadata($attachment_id);
+                    $image_url = wp_get_attachment_url($attachment_id);
+                    $thumbnail_url = wp_get_attachment_image_url($attachment_id, 'medium');
+                    $title = get_the_title($attachment_id);
+                    $whise_order = get_post_meta($attachment_id, '_whise_image_order', true);
+                    
+                    echo '<div class="whise-gallery-item" data-order="' . esc_attr($whise_order) . '">';
+                    echo '<a href="' . esc_url($image_url) . '" class="whise-gallery-link" data-lightbox="property-gallery" data-title="' . esc_attr($title) . '">';
+                    echo '<img src="' . esc_url($thumbnail_url) . '" alt="' . esc_attr($title) . '" class="whise-gallery-thumbnail">';
+                    echo '<div class="whise-gallery-overlay">';
+                    echo '<span class="whise-gallery-icon">🔍</span>';
+                    echo '</div>';
+                    echo '</a>';
+                    echo '</div>';
+                }
+            }
+            
+            echo '</div>';
+            echo '<p class="whise-gallery-count">' . sprintf(__('%d images disponibles', 'whise-integration'), count($gallery_ids)) . '</p>';
+            echo '</div>';
+            
+            // Ajouter le script lightbox si pas déjà inclus
+            $this->enqueue_lightbox_scripts();
+        } else {
+            // Fallback vers l'ancien système d'URLs
+            $images = get_post_meta($post_id, 'images', true);
+            if (!empty($images) && is_array($images)) {
+                echo '<div class="whise-images-grid whise-fallback-gallery">';
+                foreach ($images as $image) {
+                    if (isset($image['medium'])) {
+                        echo '<div class="whise-image">';
+                        echo '<img src="' . esc_url($image['medium']) . '" alt="" class="whise-fallback-image">';
+                        echo '</div>';
+                    }
+                }
+                echo '</div>';
+                echo '<p class="whise-gallery-notice"><em>' . __('Images depuis URLs externes (ancienne méthode)', 'whise-integration') . '</em></p>';
+            } else {
+                echo '<p class="whise-no-images">' . __('Aucune image disponible', 'whise-integration') . '</p>';
+            }
+        }
+    }
+
+    /**
+     * Inclut les scripts nécessaires pour la lightbox
+     */
+    private function enqueue_lightbox_scripts() {
+        static $scripts_enqueued = false;
+        
+        if (!$scripts_enqueued) {
+            // CSS pour la galerie
+            echo '<style>
+                .whise-gallery-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 15px;
+                    margin: 15px 0;
+                }
+                .whise-gallery-item {
+                    position: relative;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    transition: transform 0.3s ease;
+                }
+                .whise-gallery-item:hover {
+                    transform: scale(1.05);
+                }
+                .whise-gallery-link {
+                    display: block;
+                    position: relative;
+                }
+                .whise-gallery-thumbnail {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                }
+                .whise-gallery-overlay {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
+                .whise-gallery-item:hover .whise-gallery-overlay {
+                    opacity: 1;
+                }
+                .whise-gallery-icon {
+                    font-size: 24px;
+                    color: white;
+                }
+                .whise-gallery-count {
+                    text-align: center;
+                    color: #666;
+                    font-style: italic;
+                    margin-top: 10px;
+                }
+                .whise-multilingual-descriptions {
+                    border-left: 3px solid #0073aa;
+                    padding-left: 15px;
+                    margin: 10px 0;
+                }
+                .whise-description-lang {
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    background: #f9f9f9;
+                    border-radius: 5px;
+                }
+                .whise-lang-label {
+                    font-weight: bold;
+                    color: #0073aa;
+                    text-transform: uppercase;
+                    font-size: 12px;
+                    display: block;
+                    margin-bottom: 5px;
+                }
+                .whise-description-content {
+                    line-height: 1.6;
+                }
+                .whise-fallback-gallery .whise-image {
+                    border: 2px dashed #ccc;
+                    padding: 10px;
+                }
+                .whise-gallery-notice {
+                    color: #d63384;
+                    font-size: 12px;
+                    margin-top: 10px;
+                }
+            </style>';
+            
+            // JavaScript simple pour lightbox (peut être remplacé par une bibliothèque)
+            echo '<script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const galleryLinks = document.querySelectorAll(".whise-gallery-link");
+                    galleryLinks.forEach(link => {
+                        link.addEventListener("click", function(e) {
+                            e.preventDefault();
+                            // Simple lightbox - peut être amélioré avec une vraie bibliothèque
+                            const imageUrl = this.href;
+                            const title = this.dataset.title;
+                            window.open(imageUrl, "_blank");
+                        });
+                    });
+                });
+            </script>';
+            
+            $scripts_enqueued = true;
+        }
     }
 }
