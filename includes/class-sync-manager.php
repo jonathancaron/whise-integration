@@ -231,6 +231,10 @@ class Whise_Sync_Manager {
         $candidates = [];
         if (!empty($property['employees']) && is_array($property['employees'])) {
             $candidates = $property['employees'];
+        } elseif (!empty($property['assignedEmployees']) && is_array($property['assignedEmployees'])) {
+            $candidates = $property['assignedEmployees'];
+        } elseif (!empty($property['estateEmployees']) && is_array($property['estateEmployees'])) {
+            $candidates = $property['estateEmployees'];
         } elseif (!empty($property['employee'])) {
             $candidates = [ $property['employee'] ];
         } elseif (!empty($property['negotiator'])) {
@@ -261,6 +265,121 @@ class Whise_Sync_Manager {
         }
 
         return $representative;
+    }
+
+    private function fetch_estate_representative($estateId) {
+        $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
+        $api = new Whise_API($endpoint);
+        $this->log('DEBUG - Fetch representative for estate ' . $estateId);
+
+        // 1) Détail du bien (réponse la plus riche). On tente plusieurs variantes de paramètres
+        $getVariants = [
+            [ 'id' => $estateId ],
+            [ 'Id' => $estateId ],
+            [ 'id' => $estateId, 'include' => 'employees' ],
+            [ 'Id' => $estateId, 'include' => 'employees' ],
+            [ 'id' => $estateId, 'include' => 'Employees' ],
+            [ 'Id' => $estateId, 'include' => 'Employees' ],
+        ];
+        foreach ($getVariants as $variant) {
+            $detail = $api->post('v1/estates/get', $variant);
+            if (!empty($detail['estate'])) {
+                $estate = $detail['estate'];
+                $this->log('DEBUG - Estate get keys: ' . implode(',', array_keys($estate)) . ' (params: ' . json_encode($variant) . ')');
+                $rep = $this->extract_representative_info($estate);
+                if (!empty($rep['name']) || !empty($rep['email']) || !empty($rep['phone']) || !empty($rep['mobile'])) {
+                    return $rep;
+                }
+                // Si pas trouvé, essayer d'identifier des IDs d'employés dans le payload
+                $employeeIds = $this->find_employee_ids_in_estate($estate);
+                if (!empty($employeeIds)) {
+                    foreach ($employeeIds as $empId) {
+                        $emp = $this->fetch_employee_by_id($empId);
+                        if (!empty($emp['name']) || !empty($emp['email']) || !empty($emp['phone']) || !empty($emp['mobile'])) {
+                            return $emp;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2) Tenter un endpoint dédié aux employés du bien (selon WebsiteDesigner)
+        $employeesList = $api->post('v1/estates/employees', [ 'estateId' => $estateId ]);
+        if (empty($employeesList['employees'])) {
+            $employeesList = $api->post('v1/estates/employees', [ 'EstateId' => $estateId ]);
+        }
+        if (!empty($employeesList['employees']) && is_array($employeesList['employees'])) {
+            $this->log('DEBUG - Estate employees count: ' . count($employeesList['employees']));
+            $rep = $this->extract_representative_info([ 'employees' => $employeesList['employees'] ]);
+            if (!empty($rep['name']) || !empty($rep['email']) || !empty($rep['phone']) || !empty($rep['mobile'])) {
+                return $rep;
+            }
+        }
+
+        // 3) Tenter un autre détail générique
+        $detail2 = $api->post('v1/estates/details', [ 'id' => $estateId ]);
+        if (empty($detail2['estate'])) {
+            $detail2 = $api->post('v1/estates/details', [ 'Id' => $estateId ]);
+        }
+        if (!empty($detail2['estate'])) {
+            $estate = $detail2['estate'];
+            $this->log('DEBUG - Estate details keys: ' . implode(',', array_keys($estate)));
+            $rep = $this->extract_representative_info($estate);
+            if (!empty($rep['name']) || !empty($rep['email']) || !empty($rep['phone']) || !empty($rep['mobile'])) {
+                return $rep;
+            }
+        }
+
+        return [
+            'id' => 0,
+            'name' => '',
+            'email' => '',
+            'phone' => '',
+            'mobile' => '',
+            'picture' => ''
+        ];
+    }
+
+    private function find_employee_ids_in_estate($estate) {
+        $ids = [];
+        $walk = function($node) use (&$ids, &$walk) {
+            if (is_array($node)) {
+                foreach ($node as $key => $value) {
+                    if (is_string($key) && preg_match('/(^|_)employee(Id)?$|negotiatorId|responsible(Id)?|representative(Id)?|userId/i', $key)) {
+                        if (is_numeric($value)) {
+                            $ids[] = (int)$value;
+                        }
+                    }
+                    if (is_array($value)) {
+                        $walk($value);
+                    }
+                }
+            }
+        };
+        $walk($estate);
+        $ids = array_values(array_unique(array_filter($ids)));
+        $this->log('DEBUG - Found possible employee IDs in estate: ' . json_encode($ids));
+        return $ids;
+    }
+
+    private function fetch_employee_by_id($employeeId) {
+        if (!$employeeId) return [ 'id' => 0, 'name' => '', 'email' => '', 'phone' => '', 'mobile' => '', 'picture' => '' ];
+        $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
+        $api = new Whise_API($endpoint);
+        $this->log('DEBUG - Fetch employee by id: ' . $employeeId);
+        $res = $api->post('v1/employees/get', [ 'id' => $employeeId ]);
+        if (!empty($res['employee'])) {
+            $e = $res['employee'];
+            return [
+                'id' => (int)($e['id'] ?? $employeeId),
+                'name' => trim(($e['firstName'] ?? '') . ' ' . ($e['lastName'] ?? '')) ?: ($e['displayName'] ?? ''),
+                'email' => $e['email'] ?? ($e['contacts']['email'] ?? ''),
+                'phone' => $e['phone'] ?? ($e['contacts']['phone'] ?? ''),
+                'mobile' => $e['mobile'] ?? ($e['contacts']['mobile'] ?? ''),
+                'picture' => $e['picture'] ?? ($e['photo'] ?? ($e['avatar'] ?? ''))
+            ];
+        }
+        return [ 'id' => 0, 'name' => '', 'email' => '', 'phone' => '', 'mobile' => '', 'picture' => '' ];
     }
 
     /**
@@ -320,11 +439,26 @@ class Whise_Sync_Manager {
         $total_imported = 0;
         
         do {
-            $params = [
-                'page' => $page,
-                'pageSize' => $per_page
+            // Essayer avec filtre ShowRepresentatives pour que la liste retourne les représentants
+            $baseParams = [ 'page' => $page, 'pageSize' => $per_page ];
+            $variants = [
+                $baseParams + [ 'filter' => [ 'ShowRepresentatives' => true ] ],
+                $baseParams + [ 'Filter' => [ 'ShowRepresentatives' => true ] ],
+                $baseParams + [ 'filter' => [ 'showRepresentatives' => true ] ],
+                $baseParams + [ 'Filter' => [ 'showRepresentatives' => true ] ],
+                $baseParams,
             ];
-            $data = $api->post('v1/estates/list', $params);
+            $data = null;
+            foreach ($variants as $variant) {
+                $trial = $api->post('v1/estates/list', $variant);
+                if (!empty($trial['estates'])) {
+                    $data = $trial;
+                    if ($page === 1) {
+                        $this->log('DEBUG - estates/list variant accepted (params): ' . json_encode(array_keys($variant)));
+                    }
+                    break;
+                }
+            }
             if (!$data || empty($data['estates'])) {
                 $this->log('Aucune donnée reçue ou fin de données.');
                 break;
@@ -336,6 +470,9 @@ class Whise_Sync_Manager {
             }
             
             foreach ($data['estates'] as $property) {
+                if ($page === 1 && isset($property['representatives'])) {
+                    $this->log('DEBUG - representatives in list for estate ' . ($property['id'] ?? 'n/a') . ' count: ' . (is_array($property['representatives']) ? count($property['representatives']) : 0));
+                }
                 $this->import_property($property);
                 $total_imported++;
             }
@@ -673,22 +810,16 @@ class Whise_Sync_Manager {
         if (is_wp_error($post_id) || !$post_id) return;
 
         // Compléter avec le représentant si disponible
-        $rep = $this->extract_representative_info($property);
-        if (empty($rep['name'])) {
-            // Fallback: tenter de récupérer les détails du bien pour y trouver l'agent
-            try {
-                $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
-                $api = new Whise_API($endpoint);
-                $estate_detail = $api->post('v1/estates/get', [ 'id' => $whise_id ]);
-                if (!empty($estate_detail['estate'])) {
-                    $rep2 = $this->extract_representative_info($estate_detail['estate']);
-                    if (!empty($rep2['name'])) {
-                        $rep = $rep2;
-                    }
-                }
-            } catch (Exception $e) {
-                // ignore
-            }
+        // 1) Depuis la liste: champ representatives
+        if (!empty($property['representatives']) && is_array($property['representatives'])) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - representatives from list: ' . count($property['representatives']));
+            $rep = $this->extract_representative_info([ 'employees' => $property['representatives'] ]);
+        } else {
+            $rep = $this->extract_representative_info($property);
+        }
+        if (empty($rep['name']) && empty($rep['email']) && empty($rep['phone']) && empty($rep['mobile'])) {
+            // Si rien dans la liste, tenter les endpoints de détails/employés
+            $rep = $this->fetch_estate_representative($whise_id);
         }
         if (!empty($rep)) {
             $mapped_data['representative_id'] = $rep['id'];

@@ -1,395 +1,6 @@
 {
     "estates": [
         {
-            "id": 6775187,
-            "address": "Kerkstraat",
-            "area": 200.0,
-            "box": "2A",
-            "city": "Zwijndrecht",
-            "client": "MPH spleen-creation.be_13066",
-            "clientId": 13066,
-            "createDateTime": "2025-04-28T09:14:34.64",
-            "currency": "€",
-            "displayStatusId": 2,
-            "furnished": 1,
-            "garage": 1,
-            "groundArea": 300.0,
-            "maxArea": 200.0,
-            "minArea": 200.0,
-            "name": "Demo Office 1",
-            "number": "6",
-            "office": "spleen-creation.be (your WHISE testing office)",
-            "officeId": 16010,
-            "parking": 1,
-            "price": 2400.00,
-            "priceChangeDateTime": "2009-06-25T15:24:46",
-            "putOnlineDateTime": "2025-04-28T07:14:35.5",
-            "referenceNumber": "60452",
-            "shortDescription": [
-                {
-                    "languageId": "fr-BE",
-                    "content": "<p class=\"tmcep\">Bureau de prestige en plein centre ville. <br />D'une superficie de 200m2 avec une terasse de 13m2. Il se compose d'un hall d'entr&eacute;e avec&nbsp;une r&eacute;ception&nbsp;une salle d'attente, 2 wc's, 2 grands bureaux ouverts. <br />Parking</p>"
-                }
-            ],
-            "sms": [
-                {
-                    "languageId": "fr-BE",
-                    "content": "Bureau de prestige en plein centre ville"
-                }
-            ],
-            "updateDateTime": "2025-04-28T09:14:35.43",
-            "zip": "2070",
-            "category": {
-                "id": 4
-            },
-            "subCategory": {
-                "id": 35
-            },
-            "country": {
-                "id": 1
-            },
-            "status": {
-                "id": 1
-            },
-            "availability": {
-                "id": 2
-            },
-            "purpose": {
-                "id": 2
-            },
-            "purposeStatus": {
-                "id": 2
-            },
-            "state": {
-                "id": 3
-            },
-            "pictures": [
-                {
-                    "id": 66172521,
-                    "order": 5,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172522,
-                    "order": 6,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/60bc578375304fabbdaadf22a08eeab2.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/60bc578375304fabbdaadf22a08eeab2.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/60bc578375304fabbdaadf22a08eeab2.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172523,
-                    "order": 7,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/36bcf7a622bc434a9d622fa395d6c375.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/36bcf7a622bc434a9d622fa395d6c375.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/36bcf7a622bc434a9d622fa395d6c375.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172524,
-                    "order": 8,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/e88982c975c74017a88dfc4a279cee6c.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/e88982c975c74017a88dfc4a279cee6c.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/e88982c975c74017a88dfc4a279cee6c.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172525,
-                    "order": 9,
-                    "orientation": "Portrait",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/d627194a473b4e8c9f23cd10f75a1409.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/d627194a473b4e8c9f23cd10f75a1409.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/d627194a473b4e8c9f23cd10f75a1409.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172526,
-                    "order": 10,
-                    "orientation": "Portrait",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                },
-                {
-                    "id": 66172527,
-                    "order": 11,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/be09e1feba9b410c955cd4868bd14ee5.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/be09e1feba9b410c955cd4868bd14ee5.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/be09e1feba9b410c955cd4868bd14ee5.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.41"
-                }
-            ],
-            "details": [
-                {
-                    "value": "1956",
-                    "id": 14,
-                    "group": "Bâtiment",
-                    "type": "year",
-                    "label": "Année de construction"
-                },
-                {
-                    "value": "nord",
-                    "enum": {
-                        "id": 27
-                    },
-                    "id": 23,
-                    "group": "Spécificités terrain",
-                    "type": "orientation",
-                    "label": "orientation du bâtiment"
-                },
-                {
-                    "value": "500",
-                    "id": 27,
-                    "group": "En chiffres",
-                    "type": "surface",
-                    "label": "surface bâtie"
-                },
-                {
-                    "value": "1",
-                    "id": 43,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "air conditionné"
-                },
-                {
-                    "value": "individuel",
-                    "enum": {
-                        "id": 638
-                    },
-                    "id": 53,
-                    "group": "Equipement de base",
-                    "type": "heating_group",
-                    "label": "chauffage (ind/coll)"
-                },
-                {
-                    "value": "100",
-                    "id": 110,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "transports en commun"
-                },
-                {
-                    "value": "500",
-                    "id": 111,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "Centre-ville"
-                },
-                {
-                    "value": "144",
-                    "id": 338,
-                    "group": "Prix & transaction",
-                    "type": "price",
-                    "label": "prix/m²/a"
-                },
-                {
-                    "value": "15",
-                    "id": 344,
-                    "group": "Admin & Financier",
-                    "type": "price",
-                    "label": "charges (€/m²/a)"
-                },
-                {
-                    "value": "1",
-                    "id": 372,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "ascenseur"
-                },
-                {
-                    "value": "1",
-                    "id": 380,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "toilettes H/F"
-                },
-                {
-                    "value": "1",
-                    "id": 461,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "double vitrage"
-                },
-                {
-                    "value": "1",
-                    "id": 574,
-                    "group": "Admin & Financier",
-                    "type": "yes/no",
-                    "label": "Sous régime TVA"
-                },
-                {
-                    "value": "2008",
-                    "id": 585,
-                    "group": "Bâtiment",
-                    "type": "year",
-                    "label": "Année de rénovation"
-                },
-                {
-                    "value": "0",
-                    "id": 691,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Jugement en cours"
-                },
-                {
-                    "value": "1",
-                    "id": 729,
-                    "group": "Divers",
-                    "type": "yes/no",
-                    "label": "téléphone"
-                },
-                {
-                    "value": "1",
-                    "id": 734,
-                    "group": "Équipements techniques",
-                    "type": "yes/no",
-                    "label": "centrale tél."
-                },
-                {
-                    "value": "1",
-                    "id": 757,
-                    "group": "Raccordements",
-                    "type": "yes/no",
-                    "label": "électricité"
-                },
-                {
-                    "value": "1",
-                    "id": 758,
-                    "type": "yes/no",
-                    "label": "citerne à mazout"
-                },
-                {
-                    "value": "1",
-                    "id": 778,
-                    "group": "Équipements techniques",
-                    "type": "yes/no",
-                    "label": "isolation"
-                },
-                {
-                    "value": "banlieue",
-                    "enum": {
-                        "id": 56
-                    },
-                    "id": 795,
-                    "group": "Spécificités terrain",
-                    "type": "environment",
-                    "label": "Type d'environnement"
-                },
-                {
-                    "value": "1",
-                    "id": 808,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Permis de bâtir"
-                },
-                {
-                    "value": "1",
-                    "id": 812,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Permis de lotir"
-                },
-                {
-                    "value": "electrique",
-                    "enum": {
-                        "id": 662
-                    },
-                    "id": 1020,
-                    "group": "Equipement de base",
-                    "type": "heating",
-                    "label": "chauffage"
-                },
-                {
-                    "value": "100",
-                    "id": 1494,
-                    "group": "Bâtiment",
-                    "type": "surface",
-                    "label": "bureau 1"
-                },
-                {
-                    "value": "50",
-                    "id": 1495,
-                    "group": "Bâtiment",
-                    "type": "surface",
-                    "label": "bureau 2"
-                },
-                {
-                    "value": "50",
-                    "id": 1496,
-                    "group": "Bâtiment",
-                    "type": "surface",
-                    "label": "bureau 3"
-                },
-                {
-                    "value": "super-équipée",
-                    "enum": {
-                        "id": 686
-                    },
-                    "id": 1595,
-                    "group": "Equipement de base",
-                    "type": "kitchen",
-                    "label": "type de cuisine"
-                },
-                {
-                    "value": "tapis plain",
-                    "enum": {
-                        "id": 310
-                    },
-                    "id": 1617,
-                    "group": "Type de matériau & évaluation",
-                    "type": "floor",
-                    "label": "revêtement de sol de bureaux général"
-                },
-                {
-                    "value": "zone industrielle",
-                    "enum": {
-                        "id": 6
-                    },
-                    "id": 1736,
-                    "group": "Domaine juridique",
-                    "type": "ground_destination",
-                    "label": "affectation urbanistique"
-                },
-                {
-                    "value": "1",
-                    "id": 1752,
-                    "group": "Sécurité",
-                    "type": "yes/no",
-                    "label": "Alarme"
-                },
-                {
-                    "value": "1",
-                    "id": 1762,
-                    "group": "Sécurité",
-                    "type": "yes/no",
-                    "label": "concierge"
-                },
-                {
-                    "value": "51.2018119",
-                    "id": 1849,
-                    "group": "Nom, catégorie & situation\n",
-                    "type": "float",
-                    "label": "x de coordonnées xy"
-                },
-                {
-                    "value": "4.3449506",
-                    "id": 1850,
-                    "group": "Nom, catégorie & situation\n",
-                    "type": "float",
-                    "label": "y de coordonnées xy"
-                }
-            ]
-        },
-        {
             "id": 6775188,
             "address": "rue de Poivre",
             "area": 1000.0,
@@ -7249,419 +6860,6 @@
             ]
         },
         {
-            "id": 6775200,
-            "address": "Vijverstraat",
-            "area": 136.0,
-            "bathRooms": 1,
-            "city": "Zaventem",
-            "client": "MPH spleen-creation.be_13066",
-            "clientId": 13066,
-            "createDateTime": "2025-04-28T09:14:34.64",
-            "currency": "€",
-            "displayAddress": true,
-            "displayPrice": true,
-            "displayStatusId": 2,
-            "estateOrder": 3,
-            "floor": "1",
-            "fronts": 2,
-            "furnished": 1,
-            "garage": 1,
-            "garden": 0,
-            "maxArea": 136.0,
-            "minArea": 136.0,
-            "name": "DEMO New Project Demo App 3",
-            "number": "5",
-            "office": "spleen-creation.be (your WHISE testing office)",
-            "officeId": 16010,
-            "parentId": 6775197,
-            "parking": 1,
-            "price": 270000.00,
-            "priceChangeDateTime": "2018-12-18T11:26:28.22",
-            "referenceNumber": "3632413",
-            "rooms": 3,
-            "shortDescription": [
-                {
-                    "languageId": "fr-BE",
-                    "content": "Bel appatement au centre ville.<br />Il se compose d'un grand hall d'entr&eacute;e, cuisine &eacute;quip&eacute;e, un grand salon, une salle &agrave; manger, 2 grandes chambres, 1 salle de bain,&nbsp; toilette s&eacute;par&eacute;e.&nbsp;"
-                }
-            ],
-            "sms": [
-                {
-                    "languageId": "fr-BE",
-                    "content": "Bel appartement 2 chambres au centre ville\r\n"
-                }
-            ],
-            "terrace": 1,
-            "updateDateTime": "2025-04-28T09:14:37.763",
-            "zip": "1930",
-            "category": {
-                "id": 2
-            },
-            "subCategory": {
-                "id": 17
-            },
-            "country": {
-                "id": 1
-            },
-            "status": {
-                "id": 1
-            },
-            "availability": {
-                "id": 1
-            },
-            "purpose": {
-                "id": 1
-            },
-            "purposeStatus": {
-                "id": 1
-            },
-            "state": {
-                "id": 2
-            },
-            "pictures": [
-                {
-                    "id": 66172626,
-                    "order": 14,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.487"
-                },
-                {
-                    "id": 66172645,
-                    "order": 14,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/23e63488e38f4b1f8153f59f592187b0.jpg",
-                    "updateDateTime": "2025-04-28T07:14:37.75"
-                },
-                {
-                    "id": 66172643,
-                    "order": 15,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "updateDateTime": "2025-04-28T07:14:37.75"
-                },
-                {
-                    "id": 66172624,
-                    "order": 15,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/2a4d9353372f465384a104d1eebafcd7.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.487"
-                },
-                {
-                    "id": 66172644,
-                    "order": 16,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "updateDateTime": "2025-04-28T07:14:37.75"
-                },
-                {
-                    "id": 66172625,
-                    "order": 16,
-                    "orientation": "Landscape",
-                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/43c4c350fe0c4317a48e8142827af28d.jpg",
-                    "updateDateTime": "2025-04-28T07:14:35.487"
-                }
-            ],
-            "details": [
-                {
-                    "value": "2008",
-                    "id": 14,
-                    "group": "Bâtiment",
-                    "type": "year",
-                    "label": "Année de construction"
-                },
-                {
-                    "value": "4",
-                    "id": 15,
-                    "group": "Nom, catégorie & situation\n",
-                    "type": "int",
-                    "label": "nombre d'étages"
-                },
-                {
-                    "value": "1",
-                    "id": 20,
-                    "group": "Bâtiment",
-                    "type": "yes/no",
-                    "label": "parking intérieur"
-                },
-                {
-                    "value": "1",
-                    "id": 21,
-                    "group": "Bâtiment",
-                    "type": "yes/no",
-                    "label": "parking extérieur"
-                },
-                {
-                    "value": "1",
-                    "id": 22,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "accès handicapés"
-                },
-                {
-                    "value": "1",
-                    "id": 43,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "air conditionné"
-                },
-                {
-                    "value": "individuel",
-                    "enum": {
-                        "id": 638
-                    },
-                    "id": 53,
-                    "group": "Equipement de base",
-                    "type": "heating_group",
-                    "label": "chauffage (ind/coll)"
-                },
-                {
-                    "value": "1",
-                    "id": 55,
-                    "group": "En chiffres",
-                    "type": "int",
-                    "label": "Nbre de toilette(s)"
-                },
-                {
-                    "value": "40",
-                    "id": 78,
-                    "group": "En chiffres",
-                    "type": "surface",
-                    "label": "chambre 1"
-                },
-                {
-                    "value": "100",
-                    "id": 108,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "magasins"
-                },
-                {
-                    "value": "500",
-                    "id": 109,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "écoles"
-                },
-                {
-                    "value": "100",
-                    "id": 110,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "transports en commun"
-                },
-                {
-                    "value": "100",
-                    "id": 115,
-                    "group": "À proximité",
-                    "type": "length",
-                    "label": "plage"
-                },
-                {
-                    "value": "20",
-                    "id": 301,
-                    "group": "Charges & Rendement",
-                    "type": "price",
-                    "label": "Charges locataire"
-                },
-                {
-                    "value": "1",
-                    "id": 322,
-                    "group": "Equipement extérieur",
-                    "type": "yes/no",
-                    "label": "piscine"
-                },
-                {
-                    "value": "1",
-                    "id": 372,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "ascenseur"
-                },
-                {
-                    "value": "1",
-                    "id": 461,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "double vitrage"
-                },
-                {
-                    "value": "7",
-                    "id": 713,
-                    "group": "En chiffres",
-                    "type": "length",
-                    "label": "largeur de façade"
-                },
-                {
-                    "value": "1",
-                    "id": 757,
-                    "group": "Raccordements",
-                    "type": "yes/no",
-                    "label": "électricité"
-                },
-                {
-                    "value": "sur la digue",
-                    "enum": {
-                        "id": 67
-                    },
-                    "id": 795,
-                    "group": "Spécificités terrain",
-                    "type": "environment",
-                    "label": "Type d'environnement"
-                },
-                {
-                    "value": "1",
-                    "id": 808,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Permis de bâtir"
-                },
-                {
-                    "value": "1",
-                    "id": 812,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Permis de lotir"
-                },
-                {
-                    "value": "1",
-                    "id": 820,
-                    "group": "Certificats / Attestations",
-                    "type": "yes/no",
-                    "label": "attestation du sol"
-                },
-                {
-                    "value": "1",
-                    "id": 824,
-                    "group": "Charges & Rendement",
-                    "type": "yes/no",
-                    "label": "Loué"
-                },
-                {
-                    "value": "20",
-                    "id": 874,
-                    "group": "Caractéristiques Principales",
-                    "type": "surface",
-                    "label": "surface de terrasse 1"
-                },
-                {
-                    "value": "2",
-                    "id": 1005,
-                    "group": "En chiffres",
-                    "type": "int",
-                    "label": "Nbre de terrasse(s)"
-                },
-                {
-                    "value": "40",
-                    "id": 1009,
-                    "group": "En chiffres",
-                    "type": "surface",
-                    "label": " Salle de séjour"
-                },
-                {
-                    "value": "electrique",
-                    "enum": {
-                        "id": 662
-                    },
-                    "id": 1020,
-                    "group": "Equipement de base",
-                    "type": "heating",
-                    "label": "chauffage"
-                },
-                {
-                    "value": "super-équipée",
-                    "enum": {
-                        "id": 686
-                    },
-                    "id": 1595,
-                    "group": "Equipement de base",
-                    "type": "kitchen",
-                    "label": "type de cuisine"
-                },
-                {
-                    "value": "douche",
-                    "enum": {
-                        "id": 691
-                    },
-                    "id": 1596,
-                    "group": "Equipement de base",
-                    "type": "bathroom",
-                    "label": "sdb"
-                },
-                {
-                    "value": "1",
-                    "id": 1734,
-                    "group": "Domaine juridique",
-                    "type": "yes/no",
-                    "label": "Droit de préemption"
-                },
-                {
-                    "value": "zone de loisirs du jour",
-                    "enum": {
-                        "id": 7
-                    },
-                    "id": 1736,
-                    "group": "Domaine juridique",
-                    "type": "ground_destination",
-                    "label": "affectation urbanistique"
-                },
-                {
-                    "value": "1",
-                    "id": 1762,
-                    "group": "Sécurité",
-                    "type": "yes/no",
-                    "label": "concierge"
-                },
-                {
-                    "value": "1",
-                    "id": 1763,
-                    "group": "Equipement de base",
-                    "type": "yes/no",
-                    "label": "parlophone"
-                },
-                {
-                    "value": "1",
-                    "id": 1764,
-                    "group": "Divers",
-                    "type": "yes/no",
-                    "label": "animaux domestiques"
-                },
-                {
-                    "value": "1",
-                    "id": 1772,
-                    "group": "Raccordements",
-                    "type": "yes/no",
-                    "label": "eau"
-                },
-                {
-                    "value": "50.8804995",
-                    "id": 1849,
-                    "group": "Nom, catégorie & situation\n",
-                    "type": "float",
-                    "label": "x de coordonnées xy"
-                },
-                {
-                    "value": "4.4736401",
-                    "id": 1850,
-                    "group": "Nom, catégorie & situation\n",
-                    "type": "float",
-                    "label": "y de coordonnées xy"
-                }
-            ]
-        },
-        {
             "id": 6775197,
             "address": "Vijverstraat",
             "availabilityDateTime": "2019-12-06T00:00:00",
@@ -7700,7 +6898,7 @@
                     "content": "Au Coeur de la commune convoitée de Uccle, découvrez L’Orangeraie, un projet de 6 petites copropriétés, à taille humaine, avec maximum 3 étages,... le tout dans un écrin de verdure. Et si vous pensiez que Uccle était inaccessible financièrement, c’est le moment de changer d’avis !"
                 }
             ],
-            "updateDateTime": "2025-04-28T09:14:39.917",
+            "updateDateTime": "2025-08-19T09:39:21.88",
             "zip": "1930",
             "category": {
                 "id": 2
@@ -7887,6 +7085,964 @@
                     "id": 1914,
                     "group": "Titre de l'annonce",
                     "type": "char"
+                }
+            ]
+        },
+        {
+            "id": 6775200,
+            "address": "Vijverstraat",
+            "area": 136.0,
+            "bathRooms": 1,
+            "city": "Zaventem",
+            "client": "MPH spleen-creation.be_13066",
+            "clientId": 13066,
+            "createDateTime": "2025-04-28T09:14:34.64",
+            "currency": "€",
+            "displayAddress": true,
+            "displayPrice": true,
+            "displayStatusId": 2,
+            "energyClass": "B",
+            "energyValue": "101",
+            "estateOrder": 3,
+            "floor": "1",
+            "fronts": 2,
+            "furnished": 1,
+            "garage": 1,
+            "garden": 1,
+            "gardenArea": 14.0,
+            "groundArea": 150.0,
+            "link3DModel": "https://www.youtube.com/watch?v=xWkK_7H_YD4",
+            "linkVirtualVisit": "https://nodalview.com/s/2UI3QqClT95gX3mG2vUf5B",
+            "longDescription": [
+                {
+                    "languageId": "fr-BE",
+                    "content": "===========Description longue===========<br />Bel appatement au centre ville.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée.<br />===========Description longue==========="
+                }
+            ],
+            "maxArea": 136.0,
+            "minArea": 136.0,
+            "name": "DEMO New Project Demo App 3",
+            "number": "5",
+            "office": "spleen-creation.be (your WHISE testing office)",
+            "officeId": 16010,
+            "parentId": 6775197,
+            "parking": 1,
+            "price": 270000.00,
+            "priceChangeDateTime": "2018-12-18T11:26:28.22",
+            "putOnlineDateTime": "2025-08-19T09:43:37.84",
+            "referenceNumber": "3632413",
+            "rooms": 3,
+            "shortDescription": [
+                {
+                    "languageId": "fr-BE",
+                    "content": "Bel appatement au centre ville.<br />Il se compose d'un grand hall d'entrée, cuisine équipée, un grand salon, une salle à manger, 2 grandes chambres, 1 salle de bain, toilette séparée."
+                }
+            ],
+            "sms": [
+                {
+                    "languageId": "fr-BE",
+                    "content": "Bel appartement 2 chambres au centre ville\r\n"
+                }
+            ],
+            "terrace": 1,
+            "updateDateTime": "2025-08-19T12:19:35.01",
+            "zip": "1930",
+            "category": {
+                "id": 2
+            },
+            "subCategory": {
+                "id": 17
+            },
+            "country": {
+                "id": 1
+            },
+            "status": {
+                "id": 1
+            },
+            "availability": {
+                "id": 1
+            },
+            "purpose": {
+                "id": 1
+            },
+            "purposeStatus": {
+                "id": 1
+            },
+            "state": {
+                "id": 2
+            },
+            "pictures": [
+                {
+                    "id": 66172626,
+                    "order": 14,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.487"
+                },
+                {
+                    "id": 66172645,
+                    "order": 14,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/23e63488e38f4b1f8153f59f592187b0.jpg",
+                    "updateDateTime": "2025-04-28T07:14:37.75"
+                },
+                {
+                    "id": 66172643,
+                    "order": 15,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "updateDateTime": "2025-04-28T07:14:37.75"
+                },
+                {
+                    "id": 66172624,
+                    "order": 15,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/2a4d9353372f465384a104d1eebafcd7.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.487"
+                },
+                {
+                    "id": 66172644,
+                    "order": 16,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "updateDateTime": "2025-04-28T07:14:37.75"
+                },
+                {
+                    "id": 66172625,
+                    "order": 16,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/640/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/200/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775200/1600/43c4c350fe0c4317a48e8142827af28d.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.487"
+                }
+            ],
+            "details": [
+                {
+                    "value": "2008",
+                    "id": 14,
+                    "group": "Bâtiment",
+                    "type": "year",
+                    "label": "Année de construction"
+                },
+                {
+                    "value": "4",
+                    "id": 15,
+                    "group": "Nom, catégorie & situation\n",
+                    "type": "int",
+                    "label": "nombre d'étages"
+                },
+                {
+                    "value": "1",
+                    "id": 19,
+                    "group": "Bâtiment",
+                    "type": "int",
+                    "label": "nombre de garage"
+                },
+                {
+                    "value": "1",
+                    "id": 20,
+                    "group": "Bâtiment",
+                    "type": "yes/no",
+                    "label": "parking intérieur"
+                },
+                {
+                    "value": "1",
+                    "id": 21,
+                    "group": "Bâtiment",
+                    "type": "yes/no",
+                    "label": "parking extérieur"
+                },
+                {
+                    "value": "1",
+                    "id": 22,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "accès handicapés"
+                },
+                {
+                    "value": "1",
+                    "id": 39,
+                    "group": "Divers",
+                    "type": "yes/no",
+                    "label": "buanderie"
+                },
+                {
+                    "value": "1",
+                    "id": 43,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "air conditionné"
+                },
+                {
+                    "value": "individuel",
+                    "enum": {
+                        "id": 638
+                    },
+                    "id": 53,
+                    "group": "Equipement de base",
+                    "type": "heating_group",
+                    "label": "chauffage (ind/coll)"
+                },
+                {
+                    "value": "1",
+                    "id": 55,
+                    "group": "En chiffres",
+                    "type": "int",
+                    "label": "Nbre de toilette(s)"
+                },
+                {
+                    "value": "2",
+                    "id": 57,
+                    "group": "En chiffres",
+                    "type": "int",
+                    "label": "nombre de sdd"
+                },
+                {
+                    "value": "1",
+                    "id": 67,
+                    "group": "Divers",
+                    "type": "yes/no",
+                    "label": "bureau"
+                },
+                {
+                    "value": "40",
+                    "id": 78,
+                    "group": "En chiffres",
+                    "type": "surface",
+                    "label": "chambre 1"
+                },
+                {
+                    "value": "100",
+                    "id": 108,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "magasins"
+                },
+                {
+                    "value": "500",
+                    "id": 109,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "écoles"
+                },
+                {
+                    "value": "100",
+                    "id": 110,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "transports en commun"
+                },
+                {
+                    "value": "100",
+                    "id": 115,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "plage"
+                },
+                {
+                    "value": "1",
+                    "id": 143,
+                    "group": "Bâtiment",
+                    "type": "yes/no",
+                    "label": "carport"
+                },
+                {
+                    "value": "20",
+                    "id": 301,
+                    "group": "Charges & Rendement",
+                    "type": "price",
+                    "label": "Charges locataire"
+                },
+                {
+                    "value": "1",
+                    "id": 322,
+                    "group": "Equipement extérieur",
+                    "type": "yes/no",
+                    "label": "piscine"
+                },
+                {
+                    "value": "1",
+                    "id": 372,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "ascenseur"
+                },
+                {
+                    "value": "1",
+                    "id": 461,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "double vitrage"
+                },
+                {
+                    "value": "2015",
+                    "id": 585,
+                    "group": "Bâtiment",
+                    "type": "year",
+                    "label": "Année de rénovation"
+                },
+                {
+                    "value": "7",
+                    "id": 713,
+                    "group": "En chiffres",
+                    "type": "length",
+                    "label": "largeur de façade"
+                },
+                {
+                    "value": "1",
+                    "id": 757,
+                    "group": "Raccordements",
+                    "type": "yes/no",
+                    "label": "électricité"
+                },
+                {
+                    "value": "sur la digue",
+                    "enum": {
+                        "id": 67
+                    },
+                    "id": 795,
+                    "group": "Spécificités terrain",
+                    "type": "environment",
+                    "label": "Type d'environnement"
+                },
+                {
+                    "value": "1",
+                    "id": 808,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Permis de bâtir"
+                },
+                {
+                    "value": "1",
+                    "id": 812,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Permis de lotir"
+                },
+                {
+                    "value": "1",
+                    "id": 820,
+                    "group": "Certificats / Attestations",
+                    "type": "yes/no",
+                    "label": "attestation du sol"
+                },
+                {
+                    "value": "1",
+                    "id": 824,
+                    "group": "Charges & Rendement",
+                    "type": "yes/no",
+                    "label": "Loué"
+                },
+                {
+                    "value": "20",
+                    "id": 874,
+                    "group": "Caractéristiques Principales",
+                    "type": "surface",
+                    "label": "surface de terrasse 1"
+                },
+                {
+                    "value": "1",
+                    "id": 998,
+                    "group": "Bâtiment",
+                    "type": "int",
+                    "label": "Parking(s) intérieur"
+                },
+                {
+                    "value": "0",
+                    "id": 999,
+                    "group": "Bâtiment",
+                    "type": "int",
+                    "label": "Parking(s) extérieur"
+                },
+                {
+                    "value": "2",
+                    "id": 1005,
+                    "group": "En chiffres",
+                    "type": "int",
+                    "label": "Nbre de terrasse(s)"
+                },
+                {
+                    "value": "40",
+                    "id": 1009,
+                    "group": "En chiffres",
+                    "type": "surface",
+                    "label": " Salle de séjour"
+                },
+                {
+                    "value": "electrique",
+                    "enum": {
+                        "id": 662
+                    },
+                    "id": 1020,
+                    "group": "Equipement de base",
+                    "type": "heating",
+                    "label": "chauffage"
+                },
+                {
+                    "value": "1",
+                    "id": 1068,
+                    "group": "Bâtiment",
+                    "type": "int",
+                    "label": "nombre de carport"
+                },
+                {
+                    "value": "super-équipée",
+                    "enum": {
+                        "id": 686
+                    },
+                    "id": 1595,
+                    "group": "Equipement de base",
+                    "type": "kitchen",
+                    "label": "type de cuisine"
+                },
+                {
+                    "value": "douche",
+                    "enum": {
+                        "id": 691
+                    },
+                    "id": 1596,
+                    "group": "Equipement de base",
+                    "type": "bathroom",
+                    "label": "sdb"
+                },
+                {
+                    "value": "1",
+                    "id": 1734,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Droit de préemption"
+                },
+                {
+                    "value": "zone de loisirs du jour",
+                    "enum": {
+                        "id": 7
+                    },
+                    "id": 1736,
+                    "group": "Domaine juridique",
+                    "type": "ground_destination",
+                    "label": "affectation urbanistique"
+                },
+                {
+                    "value": "sud",
+                    "enum": {
+                        "id": 47
+                    },
+                    "id": 1737,
+                    "group": "Spécificités terrain",
+                    "type": "orientation",
+                    "label": "Exposition de la façade avant"
+                },
+                {
+                    "value": "1",
+                    "id": 1752,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "Alarme"
+                },
+                {
+                    "value": "1",
+                    "id": 1760,
+                    "group": "Raccordements",
+                    "type": "yes/no",
+                    "label": "gaz"
+                },
+                {
+                    "value": "1",
+                    "id": 1762,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "concierge"
+                },
+                {
+                    "value": "1",
+                    "id": 1763,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "parlophone"
+                },
+                {
+                    "value": "1",
+                    "id": 1764,
+                    "group": "Divers",
+                    "type": "yes/no",
+                    "label": "animaux domestiques"
+                },
+                {
+                    "value": "1",
+                    "id": 1769,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "Porte blindée"
+                },
+                {
+                    "value": "1",
+                    "id": 1772,
+                    "group": "Raccordements",
+                    "type": "yes/no",
+                    "label": "eau"
+                },
+                {
+                    "value": "50.8804995",
+                    "id": 1849,
+                    "group": "Nom, catégorie & situation\n",
+                    "type": "float",
+                    "label": "x de coordonnées xy"
+                },
+                {
+                    "value": "4.4736401",
+                    "id": 1850,
+                    "group": "Nom, catégorie & situation\n",
+                    "type": "float",
+                    "label": "y de coordonnées xy"
+                },
+                {
+                    "value": "B",
+                    "id": 2056,
+                    "group": "Energie",
+                    "type": "char",
+                    "label": "Label PEB"
+                },
+                {
+                    "value": "101",
+                    "id": 2089,
+                    "group": "Energie",
+                    "type": "float_signed",
+                    "label": "PEB E-SPEC (kwh/m²/an)"
+                },
+                {
+                    "value": "123456789",
+                    "id": 2391,
+                    "group": "Energie",
+                    "type": "char",
+                    "label": "PEB code unique"
+                },
+                {
+                    "value": "08/18/2025 00:00",
+                    "id": 2776,
+                    "group": "Energie",
+                    "type": "datetime",
+                    "label": "PEB valide jusqu'au"
+                },
+                {
+                    "value": "1",
+                    "id": 2809,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "Digicode"
+                },
+                {
+                    "value": "08/21/2025 00:00",
+                    "id": 2826,
+                    "group": "Energie",
+                    "type": "datetime",
+                    "label": "Date du PEB"
+                },
+                {
+                    "value": "08/19/2025 00:00",
+                    "id": 2838,
+                    "group": "Equipement de base",
+                    "type": "datetime",
+                    "label": "Date du dernier entretien de la chaudière"
+                }
+            ]
+        },
+        {
+            "id": 6775187,
+            "address": "Kerkstraat",
+            "area": 200.0,
+            "box": "2A",
+            "city": "Zwijndrecht",
+            "client": "MPH spleen-creation.be_13066",
+            "clientId": 13066,
+            "createDateTime": "2025-04-28T09:14:34.64",
+            "currency": "€",
+            "displayStatusId": 2,
+            "furnished": 1,
+            "garage": 1,
+            "groundArea": 300.0,
+            "maxArea": 200.0,
+            "minArea": 200.0,
+            "name": "Demo Office 1",
+            "number": "6",
+            "office": "spleen-creation.be (your WHISE testing office)",
+            "officeId": 16010,
+            "parking": 1,
+            "price": 2400.00,
+            "priceChangeDateTime": "2009-06-25T15:24:46",
+            "putOnlineDateTime": "2025-04-28T07:14:35.5",
+            "referenceNumber": "60452",
+            "shortDescription": [
+                {
+                    "languageId": "fr-BE",
+                    "content": "<p class=\"tmcep\">Bureau de prestige en plein centre ville. <br />D'une superficie de 200m2 avec une terasse de 13m2. Il se compose d'un hall d'entr&eacute;e avec&nbsp;une r&eacute;ception&nbsp;une salle d'attente, 2 wc's, 2 grands bureaux ouverts. <br />Parking</p>"
+                }
+            ],
+            "sms": [
+                {
+                    "languageId": "fr-BE",
+                    "content": "Bureau de prestige en plein centre ville"
+                }
+            ],
+            "updateDateTime": "2025-08-19T12:59:12.413",
+            "zip": "2070",
+            "category": {
+                "id": 4
+            },
+            "subCategory": {
+                "id": 35
+            },
+            "country": {
+                "id": 1
+            },
+            "status": {
+                "id": 1
+            },
+            "availability": {
+                "id": 2
+            },
+            "purpose": {
+                "id": 2
+            },
+            "purposeStatus": {
+                "id": 2
+            },
+            "state": {
+                "id": 3
+            },
+            "pictures": [
+                {
+                    "id": 66172521,
+                    "order": 5,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/a2bea6c7a93f4c68a65146f2f5a000c5.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172522,
+                    "order": 6,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/60bc578375304fabbdaadf22a08eeab2.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/60bc578375304fabbdaadf22a08eeab2.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/60bc578375304fabbdaadf22a08eeab2.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172523,
+                    "order": 7,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/36bcf7a622bc434a9d622fa395d6c375.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/36bcf7a622bc434a9d622fa395d6c375.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/36bcf7a622bc434a9d622fa395d6c375.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172524,
+                    "order": 8,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/e88982c975c74017a88dfc4a279cee6c.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/e88982c975c74017a88dfc4a279cee6c.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/e88982c975c74017a88dfc4a279cee6c.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172525,
+                    "order": 9,
+                    "orientation": "Portrait",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/d627194a473b4e8c9f23cd10f75a1409.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/d627194a473b4e8c9f23cd10f75a1409.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/d627194a473b4e8c9f23cd10f75a1409.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172526,
+                    "order": 10,
+                    "orientation": "Portrait",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/aab7dbbcb4cc42aca215eb9478a7a043.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                },
+                {
+                    "id": 66172527,
+                    "order": 11,
+                    "orientation": "Landscape",
+                    "urlLarge": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/640/be09e1feba9b410c955cd4868bd14ee5.jpg",
+                    "urlSmall": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/200/be09e1feba9b410c955cd4868bd14ee5.jpg",
+                    "urlXXL": "https://whisestorageprod.blob.core.windows.net/public/storage13066/Pictures/6775187/1600/be09e1feba9b410c955cd4868bd14ee5.jpg",
+                    "updateDateTime": "2025-04-28T07:14:35.41"
+                }
+            ],
+            "details": [
+                {
+                    "value": "1956",
+                    "id": 14,
+                    "group": "Bâtiment",
+                    "type": "year",
+                    "label": "Année de construction"
+                },
+                {
+                    "value": "nord",
+                    "enum": {
+                        "id": 27
+                    },
+                    "id": 23,
+                    "group": "Spécificités terrain",
+                    "type": "orientation",
+                    "label": "orientation du bâtiment"
+                },
+                {
+                    "value": "500",
+                    "id": 27,
+                    "group": "En chiffres",
+                    "type": "surface",
+                    "label": "surface bâtie"
+                },
+                {
+                    "value": "1",
+                    "id": 43,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "air conditionné"
+                },
+                {
+                    "value": "individuel",
+                    "enum": {
+                        "id": 638
+                    },
+                    "id": 53,
+                    "group": "Equipement de base",
+                    "type": "heating_group",
+                    "label": "chauffage (ind/coll)"
+                },
+                {
+                    "value": "100",
+                    "id": 110,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "transports en commun"
+                },
+                {
+                    "value": "500",
+                    "id": 111,
+                    "group": "À proximité",
+                    "type": "length",
+                    "label": "Centre-ville"
+                },
+                {
+                    "value": "144",
+                    "id": 338,
+                    "group": "Prix & transaction",
+                    "type": "price",
+                    "label": "prix/m²/a"
+                },
+                {
+                    "value": "15",
+                    "id": 344,
+                    "group": "Admin & Financier",
+                    "type": "price",
+                    "label": "charges (€/m²/a)"
+                },
+                {
+                    "value": "1",
+                    "id": 372,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "ascenseur"
+                },
+                {
+                    "value": "1",
+                    "id": 380,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "toilettes H/F"
+                },
+                {
+                    "value": "1",
+                    "id": 461,
+                    "group": "Equipement de base",
+                    "type": "yes/no",
+                    "label": "double vitrage"
+                },
+                {
+                    "value": "1",
+                    "id": 574,
+                    "group": "Admin & Financier",
+                    "type": "yes/no",
+                    "label": "Sous régime TVA"
+                },
+                {
+                    "value": "2008",
+                    "id": 585,
+                    "group": "Bâtiment",
+                    "type": "year",
+                    "label": "Année de rénovation"
+                },
+                {
+                    "value": "0",
+                    "id": 691,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Jugement en cours"
+                },
+                {
+                    "value": "1",
+                    "id": 729,
+                    "group": "Divers",
+                    "type": "yes/no",
+                    "label": "téléphone"
+                },
+                {
+                    "value": "1",
+                    "id": 734,
+                    "group": "Équipements techniques",
+                    "type": "yes/no",
+                    "label": "centrale tél."
+                },
+                {
+                    "value": "1",
+                    "id": 757,
+                    "group": "Raccordements",
+                    "type": "yes/no",
+                    "label": "électricité"
+                },
+                {
+                    "value": "1",
+                    "id": 758,
+                    "type": "yes/no",
+                    "label": "citerne à mazout"
+                },
+                {
+                    "value": "1",
+                    "id": 778,
+                    "group": "Équipements techniques",
+                    "type": "yes/no",
+                    "label": "isolation"
+                },
+                {
+                    "value": "banlieue",
+                    "enum": {
+                        "id": 56
+                    },
+                    "id": 795,
+                    "group": "Spécificités terrain",
+                    "type": "environment",
+                    "label": "Type d'environnement"
+                },
+                {
+                    "value": "1",
+                    "id": 808,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Permis de bâtir"
+                },
+                {
+                    "value": "1",
+                    "id": 812,
+                    "group": "Domaine juridique",
+                    "type": "yes/no",
+                    "label": "Permis de lotir"
+                },
+                {
+                    "value": "electrique",
+                    "enum": {
+                        "id": 662
+                    },
+                    "id": 1020,
+                    "group": "Equipement de base",
+                    "type": "heating",
+                    "label": "chauffage"
+                },
+                {
+                    "value": "100",
+                    "id": 1494,
+                    "group": "Bâtiment",
+                    "type": "surface",
+                    "label": "bureau 1"
+                },
+                {
+                    "value": "50",
+                    "id": 1495,
+                    "group": "Bâtiment",
+                    "type": "surface",
+                    "label": "bureau 2"
+                },
+                {
+                    "value": "50",
+                    "id": 1496,
+                    "group": "Bâtiment",
+                    "type": "surface",
+                    "label": "bureau 3"
+                },
+                {
+                    "value": "super-équipée",
+                    "enum": {
+                        "id": 686
+                    },
+                    "id": 1595,
+                    "group": "Equipement de base",
+                    "type": "kitchen",
+                    "label": "type de cuisine"
+                },
+                {
+                    "value": "tapis plain",
+                    "enum": {
+                        "id": 310
+                    },
+                    "id": 1617,
+                    "group": "Type de matériau & évaluation",
+                    "type": "floor",
+                    "label": "revêtement de sol de bureaux général"
+                },
+                {
+                    "value": "zone industrielle",
+                    "enum": {
+                        "id": 6
+                    },
+                    "id": 1736,
+                    "group": "Domaine juridique",
+                    "type": "ground_destination",
+                    "label": "affectation urbanistique"
+                },
+                {
+                    "value": "1",
+                    "id": 1752,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "Alarme"
+                },
+                {
+                    "value": "1",
+                    "id": 1762,
+                    "group": "Sécurité",
+                    "type": "yes/no",
+                    "label": "concierge"
+                },
+                {
+                    "value": "51.2018119",
+                    "id": 1849,
+                    "group": "Nom, catégorie & situation\n",
+                    "type": "float",
+                    "label": "x de coordonnées xy"
+                },
+                {
+                    "value": "4.3449506",
+                    "id": 1850,
+                    "group": "Nom, catégorie & situation\n",
+                    "type": "float",
+                    "label": "y de coordonnées xy"
                 }
             ]
         }
