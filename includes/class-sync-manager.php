@@ -185,6 +185,7 @@ class Whise_Sync_Manager {
             'representative_phone' => 'string',
             'representative_mobile' => 'string',
             'representative_picture' => 'string',
+            'representative_function' => 'string',
         ];
         
         return $field_types[$field_name] ?? 'string';
@@ -251,15 +252,31 @@ class Whise_Sync_Manager {
             }
             if ($is_candidate) {
                 $representative['id'] = (int)($emp['id'] ?? 0);
-                $representative['name'] = trim(($emp['firstName'] ?? '') . ' ' . ($emp['lastName'] ?? ''));
+                $lastName = $emp['lastName'] ?? ($emp['name'] ?? '');
+                $representative['name'] = trim(($emp['firstName'] ?? '') . ' ' . $lastName);
                 if (!$representative['name']) {
                     $representative['name'] = $emp['displayName'] ?? '';
                 }
                 $contacts = $emp['contacts'] ?? [];
                 $representative['email'] = $emp['email'] ?? ($contacts['email'] ?? '');
-                $representative['phone'] = $emp['phone'] ?? ($contacts['phone'] ?? '');
-                $representative['mobile'] = $emp['mobile'] ?? ($contacts['mobile'] ?? '');
-                $representative['picture'] = $emp['picture'] ?? ($emp['photo'] ?? ($emp['avatar'] ?? ''));
+                // directLine (WebsiteDesigner list) prioritaire si présent
+                $phoneCandidates = [
+                    $emp['directLine'] ?? null,
+                    $emp['phone'] ?? null,
+                    $contacts['phone'] ?? null,
+                    $emp['phoneNumber'] ?? null,
+                ];
+                foreach ($phoneCandidates as $pc) { if (!empty($pc)) { $representative['phone'] = $pc; break; } }
+                $mobileCandidates = [
+                    $emp['mobile'] ?? null,
+                    $contacts['mobile'] ?? null,
+                    $emp['mobilePhone'] ?? null,
+                    $emp['gsm'] ?? null,
+                    $emp['cellphone'] ?? null,
+                ];
+                foreach ($mobileCandidates as $mc) { if (!empty($mc)) { $representative['mobile'] = $mc; break; } }
+                $representative['picture'] = $emp['picture'] ?? ($emp['photo'] ?? ($emp['avatar'] ?? ($emp['pictureUrl'] ?? (is_array($emp['pictures'] ?? null) ? ($emp['pictures']['profile'] ?? '') : ''))));
+                $representative['function'] = $role ?: ($emp['function'] ?? ($emp['jobTitle'] ?? ($emp['representativeTypeInEx'] ?? '')));
                 return $representative;
             }
         }
@@ -380,6 +397,18 @@ class Whise_Sync_Manager {
             ];
         }
         return [ 'id' => 0, 'name' => '', 'email' => '', 'phone' => '', 'mobile' => '', 'picture' => '' ];
+    }
+
+    /**
+     * Retourne une description multilingue depuis les métadonnées, utilisée par le template
+     */
+    public function get_description_by_language($post_id, $field = 'shortDescription', $language = 'fr-BE') {
+        $multilingual_data = get_post_meta($post_id, 'descriptions_multilingual', true);
+        if (is_array($multilingual_data) && isset($multilingual_data[$field][$language])) {
+            return $multilingual_data[$field][$language];
+        }
+        $fallback_field = $field === 'shortDescription' ? 'short_description' : ($field === 'sms' ? 'sms_description' : $field);
+        return get_post_meta($post_id, $fallback_field, true);
     }
 
     /**
@@ -828,6 +857,7 @@ class Whise_Sync_Manager {
             $mapped_data['representative_phone'] = $rep['phone'];
             $mapped_data['representative_mobile'] = $rep['mobile'];
             $mapped_data['representative_picture'] = $rep['picture'];
+            $mapped_data['representative_function'] = $rep['function'] ?? '';
         }
 
         // Mise à jour des meta avec conversion des types

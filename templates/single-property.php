@@ -78,6 +78,7 @@ $rep_email = get_post_meta(get_the_ID(), 'representative_email', true);
 $rep_phone = get_post_meta(get_the_ID(), 'representative_phone', true);
 $rep_mobile = get_post_meta(get_the_ID(), 'representative_mobile', true);
 $rep_picture = get_post_meta(get_the_ID(), 'representative_picture', true);
+$rep_function = get_post_meta(get_the_ID(), 'representative_function', true);
 ?>
 
 <div class="whise-property-single">
@@ -155,7 +156,7 @@ $rep_picture = get_post_meta(get_the_ID(), 'representative_picture', true);
     <?php endif; ?>
 
     <!-- Représentant / Agent -->
-    <?php if ($rep_name || $rep_email || $rep_phone || $rep_mobile): ?>
+    <?php if ($rep_name || $rep_email || $rep_phone || $rep_mobile || $rep_function): ?>
         <div class="property-representative">
             <h3>Votre contact</h3>
             <div class="rep-card">
@@ -164,6 +165,7 @@ $rep_picture = get_post_meta(get_the_ID(), 'representative_picture', true);
                 <?php endif; ?>
                 <div class="rep-infos">
                     <?php if ($rep_name): ?><div class="rep-name"><?php echo esc_html($rep_name); ?></div><?php endif; ?>
+                    <?php if ($rep_function): ?><div class="rep-function"><?php echo esc_html($rep_function); ?></div><?php endif; ?>
                     <ul>
                         <?php if ($rep_email): ?><li><a href="mailto:<?php echo esc_attr($rep_email); ?>"><?php echo esc_html($rep_email); ?></a></li><?php endif; ?>
                         <?php if ($rep_phone): ?><li><a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $rep_phone)); ?>"><?php echo esc_html($rep_phone); ?></a></li><?php endif; ?>

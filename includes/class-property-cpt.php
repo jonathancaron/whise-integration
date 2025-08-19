@@ -253,7 +253,7 @@ class Whise_Property_CPT {
                         'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
                         'orientation', 'view', 'availability', 'available_date',
                         'link_3d_model', 'link_virtual_visit', 'link_video',
-                        'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_picture'],
+                        'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_picture', 'representative_function'],
             'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 
                         'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income', 'representative_id'],
             'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 
@@ -354,6 +354,7 @@ class Whise_Property_CPT {
             'representative_phone' => ['desc' => 'Téléphone du représentant/agent', 'type' => 'string'],
             'representative_mobile' => ['desc' => 'Mobile du représentant/agent', 'type' => 'string'],
             'representative_picture' => ['desc' => 'Photo/Avatar du représentant/agent', 'type' => 'string'],
+            'representative_function' => ['desc' => 'Fonction (rôle) du représentant/agent', 'type' => 'string'],
             'latitude' => 'Coordonnée GPS',
             'longitude' => 'Coordonnée GPS',
         ];
