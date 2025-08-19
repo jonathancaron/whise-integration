@@ -69,6 +69,18 @@ $images = get_post_meta(get_the_ID(), 'images', true);
 
 // Détails complets
 $details = get_post_meta(get_the_ID(), 'details', true);
+
+// Médias
+$link_3d_model = get_post_meta(get_the_ID(), 'link_3d_model', true);
+$link_virtual_visit = get_post_meta(get_the_ID(), 'link_virtual_visit', true);
+$link_video = get_post_meta(get_the_ID(), 'link_video', true);
+
+// Représentant
+$rep_name = get_post_meta(get_the_ID(), 'representative_name', true);
+$rep_email = get_post_meta(get_the_ID(), 'representative_email', true);
+$rep_phone = get_post_meta(get_the_ID(), 'representative_phone', true);
+$rep_mobile = get_post_meta(get_the_ID(), 'representative_mobile', true);
+$rep_picture = get_post_meta(get_the_ID(), 'representative_picture', true);
 ?>
 
 <div class="property-details whise-property">
@@ -250,6 +262,44 @@ $details = get_post_meta(get_the_ID(), 'details', true);
                              loading="lazy">
                     </div>
                 <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Médias avancés -->
+    <?php if ($link_3d_model || $link_virtual_visit || $link_video): ?>
+        <div class="property-media-advanced">
+            <h2>Médias</h2>
+            <ul>
+                <?php if ($link_virtual_visit): ?>
+                    <li><a href="<?php echo esc_url($link_virtual_visit); ?>" target="_blank" rel="noopener">Visite virtuelle</a></li>
+                <?php endif; ?>
+                <?php if ($link_3d_model): ?>
+                    <li><a href="<?php echo esc_url($link_3d_model); ?>" target="_blank" rel="noopener">Modèle 3D</a></li>
+                <?php endif; ?>
+                <?php if ($link_video): ?>
+                    <li><a href="<?php echo esc_url($link_video); ?>" target="_blank" rel="noopener">Vidéo</a></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <!-- Représentant / Agent -->
+    <?php if ($rep_name || $rep_email || $rep_phone || $rep_mobile): ?>
+        <div class="property-representative">
+            <h2>Contact</h2>
+            <div class="rep-card">
+                <?php if ($rep_picture): ?>
+                    <img class="rep-avatar" src="<?php echo esc_url($rep_picture); ?>" alt="<?php echo esc_attr($rep_name ?: 'Agent'); ?>" />
+                <?php endif; ?>
+                <div class="rep-infos">
+                    <?php if ($rep_name): ?><div class="rep-name"><?php echo esc_html($rep_name); ?></div><?php endif; ?>
+                    <ul>
+                        <?php if ($rep_email): ?><li><a href="mailto:<?php echo esc_attr($rep_email); ?>"><?php echo esc_html($rep_email); ?></a></li><?php endif; ?>
+                        <?php if ($rep_phone): ?><li><a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $rep_phone)); ?>"><?php echo esc_html($rep_phone); ?></a></li><?php endif; ?>
+                        <?php if ($rep_mobile): ?><li><a href="tel:<?php echo esc_attr(preg_replace('/\s+/', '', $rep_mobile)); ?>"><?php echo esc_html($rep_mobile); ?></a></li><?php endif; ?>
+                    </ul>
+                </div>
             </div>
         </div>
     <?php endif; ?>

@@ -172,6 +172,19 @@ class Whise_Sync_Manager {
             
             // Détails complets
             'details' => 'array',
+
+            // Liens médias
+            'link_3d_model' => 'string',
+            'link_virtual_visit' => 'string',
+            'link_video' => 'string',
+
+            // Représentant
+            'representative_id' => 'number',
+            'representative_name' => 'string',
+            'representative_email' => 'string',
+            'representative_phone' => 'string',
+            'representative_mobile' => 'string',
+            'representative_picture' => 'string',
         ];
         
         return $field_types[$field_name] ?? 'string';
@@ -202,6 +215,52 @@ class Whise_Sync_Manager {
             }
         }
         return null;
+    }
+
+    private function extract_representative_info($property) {
+        $representative = [
+            'id' => 0,
+            'name' => '',
+            'email' => '',
+            'phone' => '',
+            'mobile' => '',
+            'picture' => ''
+        ];
+
+        // Cherche des structures possibles dans la réponse de l'API
+        $candidates = [];
+        if (!empty($property['employees']) && is_array($property['employees'])) {
+            $candidates = $property['employees'];
+        } elseif (!empty($property['employee'])) {
+            $candidates = [ $property['employee'] ];
+        } elseif (!empty($property['negotiator'])) {
+            $candidates = [ $property['negotiator'] ];
+        } elseif (!empty($property['representative'])) {
+            $candidates = [ $property['representative'] ];
+        }
+
+        foreach ($candidates as $emp) {
+            $role = $emp['role'] ?? ($emp['type'] ?? '');
+            $is_candidate = true;
+            if (!empty($role) && is_string($role)) {
+                $is_candidate = (bool)preg_match('/respons|negoti|agent|broker/i', $role);
+            }
+            if ($is_candidate) {
+                $representative['id'] = (int)($emp['id'] ?? 0);
+                $representative['name'] = trim(($emp['firstName'] ?? '') . ' ' . ($emp['lastName'] ?? ''));
+                if (!$representative['name']) {
+                    $representative['name'] = $emp['displayName'] ?? '';
+                }
+                $contacts = $emp['contacts'] ?? [];
+                $representative['email'] = $emp['email'] ?? ($contacts['email'] ?? '');
+                $representative['phone'] = $emp['phone'] ?? ($contacts['phone'] ?? '');
+                $representative['mobile'] = $emp['mobile'] ?? ($contacts['mobile'] ?? '');
+                $representative['picture'] = $emp['picture'] ?? ($emp['photo'] ?? ($emp['avatar'] ?? ''));
+                return $representative;
+            }
+        }
+
+        return $representative;
     }
 
     /**
@@ -576,6 +635,12 @@ class Whise_Sync_Manager {
             
             // Détails complets
             'details' => $details,
+
+            // Liens médias (WebsiteDesigner)
+            // Docs: https://api.whise.eu/WebsiteDesigner.html
+            'link_3d_model' => $property['link3DModel'] ?? ($property['links']['link3DModel'] ?? ''),
+            'link_virtual_visit' => $property['linkVirtualVisit'] ?? ($property['links']['linkVirtualVisit'] ?? ''),
+            'link_video' => $property['linkVideo'] ?? ($property['links']['linkVideo'] ?? ($property['videoUrl'] ?? '')),
         ];
         
         // Debug final pour vérifier le mapping des rooms
@@ -606,6 +671,33 @@ class Whise_Sync_Manager {
         }
         
         if (is_wp_error($post_id) || !$post_id) return;
+
+        // Compléter avec le représentant si disponible
+        $rep = $this->extract_representative_info($property);
+        if (empty($rep['name'])) {
+            // Fallback: tenter de récupérer les détails du bien pour y trouver l'agent
+            try {
+                $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
+                $api = new Whise_API($endpoint);
+                $estate_detail = $api->post('v1/estates/get', [ 'id' => $whise_id ]);
+                if (!empty($estate_detail['estate'])) {
+                    $rep2 = $this->extract_representative_info($estate_detail['estate']);
+                    if (!empty($rep2['name'])) {
+                        $rep = $rep2;
+                    }
+                }
+            } catch (Exception $e) {
+                // ignore
+            }
+        }
+        if (!empty($rep)) {
+            $mapped_data['representative_id'] = $rep['id'];
+            $mapped_data['representative_name'] = $rep['name'];
+            $mapped_data['representative_email'] = $rep['email'];
+            $mapped_data['representative_phone'] = $rep['phone'];
+            $mapped_data['representative_mobile'] = $rep['mobile'];
+            $mapped_data['representative_picture'] = $rep['picture'];
+        }
 
         // Mise à jour des meta avec conversion des types
         foreach ($mapped_data as $key => $value) {

@@ -251,9 +251,11 @@ class Whise_Property_CPT {
                         'price_formatted', 'price_type', 'price_supplement', 'price_conditions', 'property_type', 
                         'transaction_type', 'status', 'energy_class', 'heating_type', 'kitchen_type',
                         'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
-                        'orientation', 'view', 'availability', 'available_date'],
+                        'orientation', 'view', 'availability', 'available_date',
+                        'link_3d_model', 'link_virtual_visit', 'link_video',
+                        'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_picture'],
             'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 
-                        'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income'],
+                        'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income', 'representative_id'],
             'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 
                          'swimming_pool', 'elevator', 'cellar', 'attic'],
             'array' => ['images', 'details'],
@@ -339,6 +341,19 @@ class Whise_Property_CPT {
             'orientation' => ['desc' => 'Orientation', 'type' => 'string'],
             'view' => ['desc' => 'Vue', 'type' => 'string'],
             'images' => 'URLs des images (sérialisé)',
+            
+            // Liens médias
+            'link_3d_model' => ['desc' => 'Lien modèle 3D (Matterport, YouTube, etc.)', 'type' => 'string'],
+            'link_virtual_visit' => ['desc' => 'Lien visite virtuelle (Nodalview, etc.)', 'type' => 'string'],
+            'link_video' => ['desc' => 'Lien vidéo', 'type' => 'string'],
+            
+            // Représentant
+            'representative_id' => ['desc' => 'ID du représentant/agent', 'type' => 'number'],
+            'representative_name' => ['desc' => 'Nom du représentant/agent', 'type' => 'string'],
+            'representative_email' => ['desc' => 'Email du représentant/agent', 'type' => 'string'],
+            'representative_phone' => ['desc' => 'Téléphone du représentant/agent', 'type' => 'string'],
+            'representative_mobile' => ['desc' => 'Mobile du représentant/agent', 'type' => 'string'],
+            'representative_picture' => ['desc' => 'Photo/Avatar du représentant/agent', 'type' => 'string'],
             'latitude' => 'Coordonnée GPS',
             'longitude' => 'Coordonnée GPS',
         ];
