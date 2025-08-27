@@ -2,6 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class Whise_Sync_Manager {
+
     /**
      * Traite et convertit une valeur selon son type défini
      */
@@ -522,6 +523,75 @@ class Whise_Sync_Manager {
     }
 
     /**
+     * Essaie de récupérer les coordonnées depuis les détails WHISE (1849/1850) si non présentes
+     */
+    private function enrich_coordinates_from_whise($post_id, $estateId) {
+        $lat = (float)get_post_meta($post_id, 'latitude', true);
+        $lng = (float)get_post_meta($post_id, 'longitude', true);
+        if ($lat !== 0.0 && $lng !== 0.0) {
+            return; // déjà présents
+        }
+        $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
+        $api = new Whise_API($endpoint);
+        $this->log('DEBUG - Enrich coordinates for estate ' . $estateId);
+        // Essayer plusieurs variantes pour forcer le retour des détails
+        $details_variants = [
+            ['id' => $estateId, 'include' => 'details'],
+            ['Id' => $estateId, 'include' => 'details'],
+            ['id' => $estateId, 'Include' => 'details'],
+            ['Id' => $estateId, 'Include' => 'details'],
+            ['id' => $estateId],
+            ['Id' => $estateId],
+        ];
+        $estate_detail = null;
+        foreach ($details_variants as $variant) {
+            $trial = $api->post('v1/estates/get', $variant);
+            if (!empty($trial['estate'])) { 
+                $estate_detail = $trial['estate']; 
+                $this->log('DEBUG - estates/get accepted with params: ' . json_encode(array_keys($variant)) . ' keys: ' . implode(',', array_keys($estate_detail)));
+                break; 
+            }
+        }
+        if (!$estate_detail) {
+            $trial = $api->post('v1/estates/details', ['id' => $estateId]);
+            if (!empty($trial['estate'])) { 
+                $estate_detail = $trial['estate'];
+                $this->log('DEBUG - estates/details (id) returned keys: ' . implode(',', array_keys($estate_detail)));
+            } else {
+                // parfois le payload est directement l'objet du bien
+                if (!empty($trial) && is_array($trial)) {
+                    $this->log('DEBUG - estates/details raw keys: ' . implode(',', array_keys($trial)));
+                }
+            }
+        }
+        if (!$estate_detail) {
+            $trial = $api->post('v1/estates/details', ['Id' => $estateId]);
+            if (!empty($trial['estate'])) { 
+                $estate_detail = $trial['estate'];
+                $this->log('DEBUG - estates/details (Id) returned keys: ' . implode(',', array_keys($estate_detail)));
+            }
+        }
+        $details_array = [];
+        if (!empty($estate_detail['details']) && is_array($estate_detail['details'])) {
+            $this->log('DEBUG - details count: ' . count($estate_detail['details']));
+            foreach ($estate_detail['details'] as $d) {
+                if (!isset($d['id'])) { continue; }
+                $details_array[(string)$d['id']] = $d['value'] ?? null;
+            }
+        }
+        // keys peuvent être string
+        $lat2 = isset($details_array['1849']) ? (float)$details_array['1849'] : (isset($details_array[1849]) ? (float)$details_array[1849] : 0.0);
+        $lng2 = isset($details_array['1850']) ? (float)$details_array['1850'] : (isset($details_array[1850]) ? (float)$details_array[1850] : 0.0);
+        if ($lat2 !== 0.0 || $lng2 !== 0.0) {
+            update_post_meta($post_id, 'latitude', $lat2);
+            update_post_meta($post_id, 'longitude', $lng2);
+            $this->log('INFO - Coordinates enriched from WHISE details: lat=' . $lat2 . ' lng=' . $lng2 . ' (post ' . $post_id . ')');
+        } else {
+            $this->log('WARN - No coordinates found in WHISE details for estate ' . $estateId);
+        }
+    }
+
+    /**
      * Importe ou met à jour un bien avec conversion des types
      */
     private function import_property($property) {
@@ -543,13 +613,23 @@ class Whise_Sync_Manager {
         $details = [];
         if (!empty($property['details'])) {
             foreach ($property['details'] as $detail) {
-                $details[$detail['id']] = [
+                // Conserver la structure attendue par findDetailValueById (avec la clé 'id')
+                $details[] = [
+                    'id' => $detail['id'],
                     'value' => $detail['value'],
-                    'label' => $detail['label'],
-                    'group' => $detail['group'],
-                    'type' => $detail['type']
+                    'label' => $detail['label'] ?? '',
+                    'group' => $detail['group'] ?? '',
+                    'type' => $detail['type'] ?? ''
                 ];
             }
+            $this->log('DEBUG - Property ' . $whise_id . ' - details count from list: ' . count($details));
+            // Vérifier la présence des IDs de coordonnées dans le payload liste
+            $has1849 = false; $has1850 = false;
+            foreach ($details as $dchk) {
+                if ((string)$dchk['id'] === '1849') { $has1849 = true; }
+                if ((string)$dchk['id'] === '1850') { $has1850 = true; }
+            }
+            $this->log('DEBUG - Property ' . $whise_id . ' - details contains 1849=' . ($has1849 ? 'yes' : 'no') . ' 1850=' . ($has1850 ? 'yes' : 'no'));
         }
 
         // Traitement des images
@@ -811,6 +891,8 @@ class Whise_Sync_Manager {
         
         // Debug final pour vérifier le mapping des rooms
         $this->log('DEBUG - Property ' . $whise_id . ' - mapped rooms value: ' . var_export($mapped_data['rooms'], true));
+        // Debug mapping latitude/longitude
+        $this->log('DEBUG - Property ' . $whise_id . ' - mapped latitude: ' . var_export($mapped_data['latitude'], true) . ' longitude: ' . var_export($mapped_data['longitude'], true));
         
         // Recherche d'un post existant avec ce whise_id
         $existing = get_posts([
@@ -871,6 +953,21 @@ class Whise_Sync_Manager {
                 $this->log('DEBUG - Property ' . $whise_id . ' - rooms conversion: original=' . var_export($value, true) . ', type=' . $type . ', converted=' . var_export($converted_value, true));
                 $saved_value = get_post_meta($post_id, 'rooms', true);
                 $this->log('DEBUG - Property ' . $whise_id . ' - rooms saved in DB: ' . var_export($saved_value, true) . ' (type: ' . gettype($saved_value) . ')');
+            }
+            if ($key === 'latitude' || $key === 'longitude') {
+                $saved_lat = get_post_meta($post_id, 'latitude', true);
+                $saved_lng = get_post_meta($post_id, 'longitude', true);
+                $this->log('DEBUG - Property ' . $whise_id . ' - saved lat/lng in DB: ' . var_export($saved_lat, true) . '/' . var_export($saved_lng, true));
+                // Champs dédiés supplémentaires pour usage front/ACF
+                update_post_meta($post_id, 'geo_lat', (float)$saved_lat);
+                update_post_meta($post_id, 'geo_lng', (float)$saved_lng);
+                // Champ compatible ACF Google Map
+                $acf_location = [
+                    'address' => get_post_meta($post_id, 'address', true) . ', ' . get_post_meta($post_id, 'zip', true) . ' ' . get_post_meta($post_id, 'city', true),
+                    'lat' => (float)$saved_lat,
+                    'lng' => (float)$saved_lng,
+                ];
+                update_post_meta($post_id, 'immo_location', $acf_location);
             }
         }
 
@@ -947,6 +1044,33 @@ class Whise_Sync_Manager {
                     wp_set_object_terms($post_id, $sub_name, 'property_type', true); // true pour ajouter, ne pas remplacer
                 }
             }
+        }
+
+        // Normalisation taxonomique: Studio si 0 chambre (ajout en complément)
+        $rooms_saved = (int)get_post_meta($post_id, 'rooms', true);
+        if ($rooms_saved === 0) {
+            wp_set_object_terms($post_id, 'Studio', 'property_type', true);
+            $this->log('INFO - Property ' . $whise_id . ' - added taxonomy term Studio (rooms=0)');
+        }
+
+        // Enrichir coordonnées si manquantes: récupérer les détails WHISE 1849/1850
+        $this->enrich_coordinates_from_whise($post_id, $whise_id);
+
+        // Après enrichissement, projeter systématiquement vers les champs dédiés
+        $final_lat = get_post_meta($post_id, 'latitude', true);
+        $final_lng = get_post_meta($post_id, 'longitude', true);
+        if ($final_lat !== '' && $final_lng !== '') {
+            update_post_meta($post_id, 'geo_lat', (float)$final_lat);
+            update_post_meta($post_id, 'geo_lng', (float)$final_lng);
+            $acf_location = [
+                'address' => get_post_meta($post_id, 'address', true) . ', ' . get_post_meta($post_id, 'zip', true) . ' ' . get_post_meta($post_id, 'city', true),
+                'lat' => (float)$final_lat,
+                'lng' => (float)$final_lng,
+            ];
+            update_post_meta($post_id, 'immo_location', $acf_location);
+            $this->log('DEBUG - Property ' . $whise_id . ' - projected geo_lat/geo_lng: ' . var_export($final_lat, true) . '/' . var_export($final_lng, true));
+        } else {
+            $this->log('WARN - Property ' . $whise_id . ' - missing lat/lng after enrichment; geo_* not updated');
         }
     }
 
