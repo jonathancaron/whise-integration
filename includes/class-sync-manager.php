@@ -75,6 +75,9 @@ class Whise_Sync_Manager {
             'status' => 'string',
             'status_id' => 'string',
             'status_language' => 'string',
+            'purpose_status' => 'string',
+            'purpose_status_id' => 'number',
+            'transaction_status' => 'string',
             'sub_categories' => 'array',
             'construction_year' => 'number',
             'renovation_year' => 'number',
@@ -971,49 +974,84 @@ class Whise_Sync_Manager {
             }
         }
 
-        // Mise à jour des taxonomies (on utilise displayName en priorité)
-        $category = $property['category'] ?? [];
-        $category_id = $category['id'] ?? '';
-        $category_name = $category['displayName'] ?? '';
-        if (empty($category_name)) {
-            $category_name = $this->find_whise_taxonomy_name($category_id, $whise_taxonomies['categories'] ?? []);
-        }
-        if (empty($category_name)) {
-            $category_name = $category['name'] ?? '';
-        }
-        if (empty($category_name)) {
-            $category_name = $this->get_default_category_name($category_id);
-            if ($category_name) {
-                $this->log('DEBUG - Property ' . $whise_id . ' - using default category name: ' . $category_name . ' for ID: ' . $category_id);
+        // Mise à jour des taxonomies - PRIORITÉ AUX SOUS-CATÉGORIES
+        $assigned_categories = [];
+        
+        // Debug : Logger toutes les données de catégories reçues
+        $this->log('DEBUG - Property ' . $whise_id . ' - RAW category: ' . json_encode($property['category'] ?? null));
+        $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategories: ' . json_encode($property['subCategories'] ?? null));  
+        $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategory: ' . json_encode($property['subCategory'] ?? null));
+        
+        // 1. D'abord traiter les sous-catégories (prioritaires)
+        // Gérer subCategories (pluriel - array)
+        if (!empty($property['subCategories'])) {
+            foreach ($property['subCategories'] as $subCategory) {
+                $sub_name = $subCategory['displayName'] ?? $subCategory['name'] ?? '';
+                if ($sub_name) {
+                    $assigned_categories[] = $sub_name;
+                    $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategories: ' . $sub_name);
+                }
             }
         }
         
-        $this->log('DEBUG - Property ' . $whise_id . ' - category data: ' . json_encode($category));
-        $this->log('DEBUG - Property ' . $whise_id . ' - category_name resolved: ' . $category_name);
+        // Gérer subCategory (singulier - objet)
+        if (!empty($property['subCategory']) && !empty($property['subCategory']['id'])) {
+            $subcategory_id = $property['subCategory']['id'];
+            $sub_name = $property['subCategory']['displayName'] ?? $property['subCategory']['name'] ?? $this->get_subcategory_name($subcategory_id);
+            if ($sub_name && !in_array($sub_name, $assigned_categories)) {
+                $assigned_categories[] = $sub_name;
+                $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategory: ' . $sub_name . ' (ID: ' . $subcategory_id . ')');
+            } else {
+                $this->log('DEBUG - Property ' . $whise_id . ' - subCategory ID ' . $subcategory_id . ' not found in mapping');
+            }
+        }
         
-        if ($category_name) {
-            wp_set_object_terms($post_id, $category_name, 'property_type', false);
-            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_type: ' . $category_name);
+        // 2. Si pas de sous-catégorie, utiliser la catégorie principale
+        if (empty($assigned_categories)) {
+            $category = $property['category'] ?? [];
+            $category_id = $category['id'] ?? '';
+            $category_name = $category['displayName'] ?? '';
+            if (empty($category_name)) {
+                $category_name = $this->find_whise_taxonomy_name($category_id, $whise_taxonomies['categories'] ?? []);
+            }
+            if (empty($category_name)) {
+                $category_name = $category['name'] ?? '';
+            }
+            if (empty($category_name)) {
+                $category_name = $this->get_default_category_name($category_id);
+                if ($category_name) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - using default category name: ' . $category_name . ' for ID: ' . $category_id);
+                }
+            }
+            
+            if ($category_name) {
+                $assigned_categories[] = $category_name;
+                $this->log('DEBUG - Property ' . $whise_id . ' - main category used: ' . $category_name);
+            }
+        }
+        
+        // 3. Assigner les catégories finales
+        if (!empty($assigned_categories)) {
+            // Log des données complètes pour debug
+            $this->log('DEBUG - Property ' . $whise_id . ' - category data: ' . json_encode($property['category'] ?? []));
+            $this->log('DEBUG - Property ' . $whise_id . ' - subCategories data: ' . json_encode($property['subCategories'] ?? []));
+            $this->log('DEBUG - Property ' . $whise_id . ' - final assigned_categories: ' . json_encode($assigned_categories));
+            
+            wp_set_object_terms($post_id, $assigned_categories, 'property_type', false);
+            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_type: ' . implode(', ', $assigned_categories));
+            
+            // Vérification après assignation
+            $check_terms = wp_get_object_terms($post_id, 'property_type', ['fields' => 'names']);
+            $this->log('DEBUG - Property ' . $whise_id . ' - verified terms after assignment: ' . implode(', ', $check_terms));
         } else {
-            $this->log('DEBUG - Property ' . $whise_id . ' - NO category name found');
+            $this->log('DEBUG - Property ' . $whise_id . ' - NO category found');
         }
         
-        $purpose = $property['purpose'] ?? [];
-        $purpose_id = $purpose['id'] ?? '';
-        $purpose_name = $purpose['displayName'] ?? '';
-        if (empty($purpose_name)) {
-            $purpose_name = $this->find_whise_taxonomy_name($purpose_id, $whise_taxonomies['purposes'] ?? []);
-        }
-        if (empty($purpose_name)) {
-            $purpose_name = $purpose['name'] ?? '';
-        }
-        if (empty($purpose_name)) {
-            $purpose_name = $this->get_default_purpose_name($purpose_id);
-        }
-        if ($purpose_name) {
-            wp_set_object_terms($post_id, $purpose_name, 'transaction_type', false);
-            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to transaction_type: ' . $purpose_name);
-        }
+        // ANCIEN CODE : purpose assigné séparément - maintenant géré par whise_update_simple_transaction_status()
+        // $purpose = $property['purpose'] ?? [];
+        // $purpose_name = ...
+        // wp_set_object_terms($post_id, $purpose_name, 'transaction_type', false);
+        // Note: Les statuts de transaction sont maintenant assignés par whise_update_simple_transaction_status() plus bas
         
         if (!empty($property['city'])) {
             wp_set_object_terms($post_id, $property['city'], 'property_city', false);
@@ -1036,25 +1074,27 @@ class Whise_Sync_Manager {
             $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_status: ' . $status_name);
         }
         
-        // Gestion des sous-catégories
-        if (!empty($property['subCategories'])) {
-            foreach ($property['subCategories'] as $subCategory) {
-                $sub_name = $subCategory['displayName'] ?? $subCategory['name'] ?? '';
-                if ($sub_name) {
-                    wp_set_object_terms($post_id, $sub_name, 'property_type', true); // true pour ajouter, ne pas remplacer
-                }
-            }
-        }
-
-        // Normalisation taxonomique: Studio si 0 chambre (ajout en complément)
+        // Normalisation taxonomique: Studio si 0 chambre ET pas déjà de sous-catégorie
         $rooms_saved = (int)get_post_meta($post_id, 'rooms', true);
-        if ($rooms_saved === 0) {
-            wp_set_object_terms($post_id, 'Studio', 'property_type', true);
-            $this->log('INFO - Property ' . $whise_id . ' - added taxonomy term Studio (rooms=0)');
+        $existing_terms = wp_get_object_terms($post_id, 'property_type', ['fields' => 'names']);
+        if ($rooms_saved === 0 && empty($existing_terms)) {
+            // Seulement si aucun type n'a été assigné par les sous-catégories
+            wp_set_object_terms($post_id, 'Studio', 'property_type', false); // false = remplace
+            $this->log('INFO - Property ' . $whise_id . ' - assigned Studio as fallback (rooms=0, no subcategory)');
+        } elseif ($rooms_saved === 0 && !empty($existing_terms)) {
+            $this->log('INFO - Property ' . $whise_id . ' - rooms=0 but subcategory already assigned: ' . implode(', ', $existing_terms));
         }
 
         // Enrichir coordonnées si manquantes: récupérer les détails WHISE 1849/1850
         $this->enrich_coordinates_from_whise($post_id, $whise_id);
+
+        // Mettre à jour le statut de transaction simplifié
+        $purpose_status_id = $mapped_data['purpose_status_id'] ?? 0;
+        $purpose_id = $mapped_data['transaction_type_id'] ?? 1;
+        if ($purpose_status_id && function_exists('whise_update_simple_transaction_status')) {
+            $simple_status = whise_update_simple_transaction_status($post_id, $purpose_status_id, $purpose_id);
+            $this->log('INFO - Property ' . $whise_id . ' - transaction_status set to: ' . $simple_status . ' (purpose_status_id=' . $purpose_status_id . ', purpose_id=' . $purpose_id . ')');
+        }
 
         // Après enrichissement, projeter systématiquement vers les champs dédiés
         $final_lat = get_post_meta($post_id, 'latitude', true);
@@ -1116,5 +1156,35 @@ class Whise_Sync_Manager {
         ];
         
         return $default_statuses[(string)$status_id] ?? null;
+    }
+
+    /**
+     * Retourne un nom de sous-catégorie basé sur l'ID Whise
+     */
+    private function get_subcategory_name($subcategory_id) {
+        $subcategories = [
+            '17' => 'Appartement',
+            '18' => 'Duplex', 
+            '19' => 'Penthouse',
+            '20' => 'Flat',
+            '21' => 'Studio',
+            '22' => 'Triplex',
+            '23' => 'Loft',
+            '25' => 'Rez-de-chaussée',
+            '62' => 'Autres',
+            '69' => 'Appartements à usage multiple',
+            '72' => 'App. dans maison de caractère',
+            '73' => 'Rez-de-ch. avec jardin',
+            '74' => 'Appartement avec jardin',
+            '93' => 'Chambre étudiant',
+            '94' => 'App. sous toit',
+            '95' => 'Service flats',
+            '97' => 'Appartement vente sur plan',
+            '156' => 'Appartement exceptionnel',
+            '160' => 'Chambre',
+            '165' => 'Résidences-services'
+        ];
+        
+        return $subcategories[(string)$subcategory_id] ?? null;
     }
 }

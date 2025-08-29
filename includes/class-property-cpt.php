@@ -43,7 +43,7 @@ class Whise_Property_CPT {
     public function admin_diagnostic_notice() {
         $missing = [];
         if (!post_type_exists('property')) $missing[] = 'Post type "property"';
-        foreach(['property_type','transaction_type','property_city','property_status'] as $tax) {
+        foreach(['property_type','transaction_type','property_city','property_status','purpose_status'] as $tax) {
             if (!taxonomy_exists($tax)) $missing[] = 'Taxonomie "'.$tax.'"';
         }
         if (!empty($missing)) {
@@ -118,8 +118,8 @@ class Whise_Property_CPT {
                 wp_insert_term($type, 'property_type');
             }
         }
-        // transaction_type
-        $transactions = ['vente', 'location'];
+        // transaction_type (avec tous les statuts : vente/location/vendu/sous_option)
+        $transactions = ['vente', 'location', 'vendu', 'sous_option'];
         foreach ($transactions as $tr) {
             if (!term_exists($tr, 'transaction_type')) {
                 wp_insert_term($tr, 'transaction_type');
@@ -130,6 +130,20 @@ class Whise_Property_CPT {
         foreach ($statuses as $st) {
             if (!term_exists($st, 'property_status')) {
                 wp_insert_term($st, 'property_status');
+            }
+        }
+        
+        // purpose_status (statuts simples pour l'affichage et l'utilisation)
+        $purpose_statuses = [
+            'vente',
+            'location', 
+            'vendu',
+            'sous_option'
+        ];
+        
+        foreach ($purpose_statuses as $status) {
+            if (!term_exists($status, 'purpose_status')) {
+                wp_insert_term($status, 'purpose_status');
             }
         }
     }
@@ -208,7 +222,7 @@ class Whise_Property_CPT {
             'show_admin_column' => true,
             'rewrite' => ['slug' => 'ville', 'with_front' => false],
         ]);
-        // property_status
+        // property_status (masqué de l'admin pour éviter le doublon)
         register_taxonomy('property_status', 'property', [
             'label' => __('Statut', 'whise-integration'),
             'labels' => [
@@ -223,15 +237,47 @@ class Whise_Property_CPT {
                 'new_item_name' => __('Nouveau statut', 'whise-integration'),
                 'search_items' => __('Rechercher des statuts', 'whise-integration')
             ],
-            'public' => true,
-            'show_ui' => true,
-            'show_in_menu' => true,
-            'show_in_nav_menus' => true,
+            'public' => false,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_nav_menus' => false,
             'show_in_rest' => true,
             'hierarchical' => true,
-            'show_admin_column' => true,
+            'show_admin_column' => false, // Masquer la colonne admin
             'query_var' => true,
-            'rewrite' => ['slug' => 'statut', 'with_front' => false],
+            'rewrite' => false, // Désactiver le rewrite pour éviter les conflits
+            'capabilities' => [
+                'manage_terms' => 'manage_categories',
+                'edit_terms' => 'manage_categories',
+                'delete_terms' => 'manage_categories',
+                'assign_terms' => 'edit_posts'
+            ]
+        ]);
+        
+        // purpose_status (masqué de l'admin - statuts maintenant dans transaction_type)
+        register_taxonomy('purpose_status', 'property', [
+            'label' => __('Statut de transaction', 'whise-integration'),
+            'labels' => [
+                'name' => __('Statuts de transaction', 'whise-integration'),
+                'singular_name' => __('Statut de transaction', 'whise-integration'),
+                'menu_name' => __('Statuts transaction', 'whise-integration'),
+                'all_items' => __('Tous les statuts de transaction', 'whise-integration'),
+                'edit_item' => __('Modifier le statut de transaction', 'whise-integration'),
+                'view_item' => __('Voir le statut de transaction', 'whise-integration'),
+                'update_item' => __('Mettre à jour le statut de transaction', 'whise-integration'),
+                'add_new_item' => __('Ajouter un statut de transaction', 'whise-integration'),
+                'new_item_name' => __('Nouveau statut de transaction', 'whise-integration'),
+                'search_items' => __('Rechercher des statuts de transaction', 'whise-integration')
+            ],
+            'public' => false,
+            'show_ui' => false,
+            'show_in_menu' => false,
+            'show_in_nav_menus' => false,
+            'show_in_rest' => true,
+            'hierarchical' => true,
+            'show_admin_column' => false, // Masqué
+            'query_var' => true,
+            'rewrite' => false,
             'capabilities' => [
                 'manage_terms' => 'manage_categories',
                 'edit_terms' => 'manage_categories',
@@ -249,13 +295,13 @@ class Whise_Property_CPT {
         $field_types = [
             'string' => ['whise_id', 'reference', 'address', 'city', 'postal_code', 'country', 'description', 'description_short',
                         'price_formatted', 'price_type', 'price_supplement', 'price_conditions', 'property_type', 
-                        'transaction_type', 'status', 'energy_class', 'heating_type', 'kitchen_type',
+                        'transaction_type', 'status', 'purpose_status', 'transaction_status', 'energy_class', 'heating_type', 'kitchen_type',
                         'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
                         'orientation', 'view', 'availability', 'available_date',
                         'link_3d_model', 'link_virtual_visit', 'link_video',
                         'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_picture', 'representative_function'],
             'number' => ['price', 'surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 
-                        'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income', 'representative_id'],
+                        'rooms', 'bedrooms', 'bathrooms', 'floors', 'construction_year', 'epc_value', 'cadastral_income', 'representative_id', 'purpose_status_id'],
             'boolean' => ['is_immediately_available', 'parking', 'garage', 'terrace', 'garden', 
                          'swimming_pool', 'elevator', 'cellar', 'attic'],
             'array' => ['images', 'details'],
@@ -292,6 +338,9 @@ class Whise_Property_CPT {
             'property_type' => ['desc' => 'Type (appartement/maison/bureau)', 'type' => 'string'],
             'transaction_type' => ['desc' => 'Vente/Location', 'type' => 'string'],
             'status' => ['desc' => 'Statut du bien', 'type' => 'string'],
+            'purpose_status' => ['desc' => 'Statut de transaction Whise (texte)', 'type' => 'string'],
+            'purpose_status_id' => ['desc' => 'ID du statut de transaction Whise', 'type' => 'number'],
+            'transaction_status' => ['desc' => 'Statut simplifié (vente/location/vendu/sous_option)', 'type' => 'string'],
             'construction_year' => ['desc' => 'Année de construction', 'type' => 'number'],
             
             // Localisation
@@ -418,9 +467,10 @@ class Whise_Property_CPT {
         
         // Colonnes de taxonomies (WordPress les gère automatiquement si show_admin_column = true)
         $new_columns['taxonomy-property_type'] = __('Type', 'whise-integration');
-        $new_columns['taxonomy-transaction_type'] = __('Transaction', 'whise-integration');
+        $new_columns['taxonomy-transaction_type'] = __('Statut', 'whise-integration'); // Renommé de "Transaction" vers "Statut"
         $new_columns['taxonomy-property_city'] = __('Ville', 'whise-integration');
-        $new_columns['taxonomy-property_status'] = __('Statut', 'whise-integration');
+        // $new_columns['taxonomy-property_status'] = __('Statut', 'whise-integration'); // Masqué pour éviter doublon
+        // $new_columns['taxonomy-purpose_status'] = __('Statut', 'whise-integration'); // Masqué - statuts maintenant dans transaction_type
         
         // Colonne date à la fin
         if (isset($columns['date'])) $new_columns['date'] = $columns['date'];
@@ -464,9 +514,10 @@ class Whise_Property_CPT {
             'reference' => __('Référence', 'whise-integration'),
             'price' => __('Prix', 'whise-integration'),
             'taxonomy-property_type' => __('Type', 'whise-integration'),
-            'taxonomy-transaction_type' => __('Transaction', 'whise-integration'),
+            'taxonomy-transaction_type' => __('Statut', 'whise-integration'), // Maintenant les statuts
             'taxonomy-property_city' => __('Ville', 'whise-integration'),
-            'taxonomy-property_status' => __('Statut', 'whise-integration'),
+            // 'taxonomy-property_status' => __('Statut', 'whise-integration'), // Supprimé pour éviter doublon
+            // 'taxonomy-purpose_status' => __('Statut', 'whise-integration'), // Masqué - statuts dans transaction_type
             'date' => $columns['date'] ?? ''
         ];
         
@@ -529,6 +580,10 @@ class Whise_Property_CPT {
             'pieces' => [
                 'title' => 'Pièces',
                 'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors']
+            ],
+            'statut_transaction' => [
+                'title' => 'Statut de transaction',
+                'fields' => ['transaction_status', 'purpose_status', 'purpose_status_id']
             ],
             'localisation' => [
                 'title' => 'Localisation',
@@ -615,7 +670,7 @@ class Whise_Property_CPT {
         }
         
         // Vérifier si les taxonomies sont visibles
-        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status'];
+        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status', 'purpose_status'];
         $missing_taxonomies = [];
         
         foreach ($taxonomies as $taxonomy) {
@@ -662,7 +717,7 @@ class Whise_Property_CPT {
         global $wpdb;
         
         // Supprime d'abord toutes les données des taxonomies
-        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status'];
+        $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status', 'purpose_status'];
         
         // Supprime les termes et relations
         foreach($taxonomies as $taxonomy) {
@@ -813,4 +868,190 @@ function whise_get_property_featured_image($post_id = null, $size = 'medium') {
     }
     
     return '';
+}
+
+/**
+ * Mappe un ID de statut Whise vers un statut simplifié
+ * @param int $whise_purpose_status_id L'ID Whise du statut
+ * @return string Le statut simplifié (vente/location/vendu/sous_option)
+ */
+function whise_map_status_to_simple($whise_purpose_status_id, $purpose_id = 1) {
+    $mapping = [
+        // Statuts de vente actifs
+        1 => 'vente',    // à vendre
+        19 => 'vente',   // prospection
+        20 => 'vente',   // préparation
+        24 => 'vente',   // estimation v.
+        
+        // Statuts sous option/réservé
+        5 => 'sous_option',   // option v.
+        12 => 'sous_option',  // option prop. v.
+        21 => 'sous_option',  // réservé
+        22 => 'sous_option',  // compromis
+        14 => 'sous_option',  // vendu avec cond. suspensive
+        
+        // Statuts vendus/finalisés
+        3 => 'vendu',    // vendu
+        8 => 'vendu',    // retiré v.
+        10 => 'vendu',   // suspendu v.
+    ];
+    
+    $base_status = $mapping[$whise_purpose_status_id] ?? null;
+    
+    // Si c'est une location (purpose_id = 2), adapter les statuts
+    if ($purpose_id == 2) {
+        if ($base_status === 'vente') {
+            return 'location';
+        } elseif ($base_status === 'vendu') {
+            return 'location'; // ou 'loué' si vous préférez
+        }
+    }
+    
+    return $base_status ?? ($purpose_id == 2 ? 'location' : 'vente');
+}
+
+/**
+ * Met à jour le statut simplifié basé sur l'ID Whise
+ * @param int $post_id ID du post
+ * @param int $whise_purpose_status_id ID du statut Whise
+ */
+function whise_update_simple_transaction_status($post_id, $whise_purpose_status_id, $purpose_id = 1) {
+    $simple_status = whise_map_status_to_simple($whise_purpose_status_id, $purpose_id);
+    update_post_meta($post_id, 'transaction_status', $simple_status);
+    
+    // Assigner le terme dans la taxonomie transaction_type (qui contient maintenant tous les statuts)
+    wp_set_object_terms($post_id, $simple_status, 'transaction_type');
+    
+    return $simple_status;
+}
+
+/**
+ * Récupère le statut de transaction simplifié d'une propriété
+ * @param int $post_id ID du post (optionnel, utilise get_the_ID() par défaut)
+ * @return string Le statut simplifié
+ */
+function whise_get_transaction_status($post_id = null) {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+    return get_post_meta($post_id, 'transaction_status', true) ?: 'vente';
+}
+
+/**
+ * Fonction de debug pour tester les mappings de statuts
+ */
+function whise_debug_status_mappings() {
+    $test_cases = [
+        ['purpose_status_id' => 1, 'purpose_id' => 1, 'expected' => 'vente'], // à vendre
+        ['purpose_status_id' => 3, 'purpose_id' => 1, 'expected' => 'vendu'], // vendu
+        ['purpose_status_id' => 5, 'purpose_id' => 1, 'expected' => 'sous_option'], // option v.
+        ['purpose_status_id' => 1, 'purpose_id' => 2, 'expected' => 'location'], // à louer
+        ['purpose_status_id' => 3, 'purpose_id' => 2, 'expected' => 'location'], // loué
+        ['purpose_status_id' => 22, 'purpose_id' => 1, 'expected' => 'sous_option'], // compromis
+    ];
+    
+    echo "<h3>Debug des mappings de statuts Whise</h3>";
+    echo "<table border='1' cellpadding='5'>";
+    echo "<tr><th>Purpose Status ID</th><th>Purpose ID</th><th>Résultat</th><th>Attendu</th><th>Status</th></tr>";
+    
+    foreach ($test_cases as $test) {
+        $result = whise_map_status_to_simple($test['purpose_status_id'], $test['purpose_id']);
+        $status = ($result === $test['expected']) ? '✅ OK' : '❌ ERREUR';
+        echo "<tr>";
+        echo "<td>{$test['purpose_status_id']}</td>";
+        echo "<td>{$test['purpose_id']}</td>";
+        echo "<td><strong>{$result}</strong></td>";
+        echo "<td>{$test['expected']}</td>";
+        echo "<td>{$status}</td>";
+        echo "</tr>";
+    }
+    
+    echo "</table>";
+}
+
+/**
+ * Fonction de debug pour vérifier les termes assignés à un bien
+ */
+function whise_debug_property_terms($post_id) {
+    if (!$post_id) {
+        echo "<p>Aucun post_id fourni</p>";
+        return;
+    }
+    
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== 'property') {
+        echo "<p>Post non trouvé ou pas un bien immobilier</p>";
+        return;
+    }
+    
+    echo "<h3>Debug des termes pour le bien #{$post_id} : " . esc_html($post->post_title) . "</h3>";
+    
+    $taxonomies = ['property_type', 'transaction_type', 'property_city', 'property_status', 'purpose_status'];
+    
+    echo "<table border='1' cellpadding='5'>";
+    echo "<tr><th>Taxonomie</th><th>Termes assignés</th><th>Méta correspondante</th></tr>";
+    
+    foreach ($taxonomies as $taxonomy) {
+        $terms = wp_get_object_terms($post_id, $taxonomy, ['fields' => 'names']);
+        $meta_value = '';
+        
+        // Récupérer la méta correspondante
+        switch($taxonomy) {
+            case 'property_type':
+                $meta_value = get_post_meta($post_id, 'property_type', true);
+                break;
+            case 'transaction_type':
+                $meta_value = get_post_meta($post_id, 'transaction_type', true) . ' | transaction_status: ' . get_post_meta($post_id, 'transaction_status', true);
+                break;
+            case 'property_city':
+                $meta_value = get_post_meta($post_id, 'city', true);
+                break;
+            case 'property_status':
+                $meta_value = get_post_meta($post_id, 'status', true);
+                break;
+            case 'purpose_status':
+                $meta_value = get_post_meta($post_id, 'purpose_status', true) . ' (ID: ' . get_post_meta($post_id, 'purpose_status_id', true) . ')';
+                break;
+        }
+        
+        echo "<tr>";
+        echo "<td><strong>{$taxonomy}</strong></td>";
+        echo "<td>" . (empty($terms) ? '<em>Aucun</em>' : implode(', ', $terms)) . "</td>";
+        echo "<td><small>{$meta_value}</small></td>";
+        echo "</tr>";
+    }
+    
+    echo "</table>";
+    
+    // Autres métadonnées utiles
+    echo "<h4>Métadonnées Whise</h4>";
+    echo "<p><strong>Whise ID:</strong> " . get_post_meta($post_id, 'whise_id', true) . "</p>";
+    echo "<p><strong>Rooms:</strong> " . get_post_meta($post_id, 'rooms', true) . "</p>";
+    echo "<p><strong>Sub categories:</strong> " . print_r(get_post_meta($post_id, 'sub_categories', true), true) . "</p>";
+}
+
+/**
+ * Fonction pour tester manuellement l'assignation de Studio
+ */
+function whise_force_studio_assignment($post_id) {
+    if (!$post_id) {
+        echo "<p>Aucun post_id fourni</p>";
+        return;
+    }
+    
+    // Nettoyer tous les termes actuels
+    wp_set_object_terms($post_id, [], 'property_type', false);
+    
+    // Assigner seulement Studio
+    $result = wp_set_object_terms($post_id, ['Studio'], 'property_type', false);
+    
+    if (is_wp_error($result)) {
+        echo "<p style='color: red;'>Erreur lors de l'assignation : " . $result->get_error_message() . "</p>";
+    } else {
+        echo "<p style='color: green;'>Studio assigné avec succès au bien #{$post_id}</p>";
+        
+        // Vérifier l'assignation
+        $terms = wp_get_object_terms($post_id, 'property_type', ['fields' => 'names']);
+        echo "<p><strong>Termes assignés après test :</strong> " . implode(', ', $terms) . "</p>";
+    }
 }
