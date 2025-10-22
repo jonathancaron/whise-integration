@@ -10,6 +10,7 @@ class Whise_Admin {
         add_action('admin_post_whise_clear_logs', [$this, 'clear_logs']);
         add_action('admin_post_whise_reset_taxonomies', [$this, 'reset_taxonomies']);
         add_action('admin_post_whise_force_reset', [$this, 'force_reset']);
+        add_action('admin_post_whise_cleanup_images', [$this, 'cleanup_images']);
         add_action('admin_notices', [$this, 'admin_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
     }
@@ -72,6 +73,10 @@ class Whise_Admin {
         register_setting('whise_options', 'whise_sync_frequency', ['default' => 'hourly']);
         register_setting('whise_options', 'whise_sync_enabled', ['default' => true]);
         register_setting('whise_options', 'whise_debug_mode', ['default' => false]);
+        register_setting('whise_options', 'whise_image_quality', ['default' => 'urlXXL']);
+        register_setting('whise_options', 'whise_cleanup_obsolete', ['default' => true]);
+        register_setting('whise_options', 'whise_batch_size', ['default' => 25]);
+        register_setting('whise_options', 'whise_skip_image_download', ['default' => false]);
     }
 
     public function enqueue_admin_scripts($hook) {
@@ -173,6 +178,44 @@ class Whise_Admin {
                                 </label>
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Qualité des images', 'whise-integration'); ?></th>
+                            <td>
+                                <select name="whise_image_quality">
+                                    <option value="urlXXL" <?php selected(get_option('whise_image_quality', 'urlXXL'), 'urlXXL'); ?>><?php _e('Haute qualité (1600px+)', 'whise-integration'); ?></option>
+                                    <option value="urlLarge" <?php selected(get_option('whise_image_quality', 'urlXXL'), 'urlLarge'); ?>><?php _e('Qualité moyenne (640px)', 'whise-integration'); ?></option>
+                                    <option value="urlSmall" <?php selected(get_option('whise_image_quality', 'urlXXL'), 'urlSmall'); ?>><?php _e('Qualité réduite (200px)', 'whise-integration'); ?></option>
+                                </select>
+                                <p class="description"><?php _e('Qualité des images téléchargées depuis Whise. La haute qualité est recommandée pour un affichage optimal.', 'whise-integration'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Nettoyage automatique', 'whise-integration'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="whise_cleanup_obsolete" value="1" <?php checked(get_option('whise_cleanup_obsolete', true), true); ?>>
+                                    <?php _e('Supprimer les biens qui ne sont plus dans l\'API Whise', 'whise-integration'); ?>
+                                </label>
+                                <p class="description"><?php _e('Lors de la synchronisation, supprime automatiquement les biens qui ne sont plus présents dans l\'API Whise. Désactivez cette option si vous voulez conserver tous les biens même s\'ils sont retirés de Whise.', 'whise-integration'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Taille des batches', 'whise-integration'); ?></th>
+                            <td>
+                                <input type="number" name="whise_batch_size" value="<?php echo esc_attr(get_option('whise_batch_size', 25)); ?>" min="5" max="100" step="5">
+                                <p class="description"><?php _e('Nombre de biens traités par page lors de la synchronisation. Réduisez cette valeur si vous rencontrez des timeouts (recommandé: 25).', 'whise-integration'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Téléchargement d\'images', 'whise-integration'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="whise_skip_image_download" value="1" <?php checked(get_option('whise_skip_image_download', false), true); ?>>
+                                    <?php _e('Désactiver le téléchargement d\'images (pour éviter les timeouts)', 'whise-integration'); ?>
+                                </label>
+                                <p class="description"><?php _e('Si activé, les images ne seront pas téléchargées lors de la synchronisation. Utile pour éviter les timeouts sur les serveurs lents. Les images existantes seront conservées.', 'whise-integration'); ?></p>
+                            </td>
+                        </tr>
                     </table>
                     <?php submit_button(); ?>
                 </form>
@@ -210,6 +253,12 @@ class Whise_Admin {
                         <?php wp_nonce_field('whise_force_reset', 'whise_force_reset_nonce'); ?>
                         <input type="hidden" name="action" value="whise_force_reset">
                         <button type="submit" class="button button-secondary" style="background-color: #dc3232; border-color: #dc3232; color: white;" onclick="return confirm('<?php _e('ATTENTION : Cette action va supprimer toutes les données du plugin et forcer une réinitialisation complète. Êtes-vous absolument sûr ?', 'whise-integration'); ?>')"><?php _e('Réinitialisation complète', 'whise-integration'); ?></button>
+                    </form>
+                    
+                    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline; margin-left: 10px;">
+                        <?php wp_nonce_field('whise_cleanup_images', 'whise_cleanup_images_nonce'); ?>
+                        <input type="hidden" name="action" value="whise_cleanup_images">
+                        <button type="submit" class="button button-secondary" style="background-color: #ff6b35; border-color: #ff6b35; color: white;" onclick="return confirm('<?php _e('ATTENTION : Cette action va supprimer TOUTES les images Whise téléchargées et remettre à zéro les galeries. Êtes-vous sûr de vouloir continuer ?', 'whise-integration'); ?>')"><?php _e('🗑️ Nettoyer toutes les images', 'whise-integration'); ?></button>
                     </form>
                 </div>
             </div>
@@ -678,6 +727,148 @@ class Whise_Admin {
                 $message = isset($_GET['message']) ? urldecode($_GET['message']) : 'Erreur inconnue';
                 echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(__('Échec de la réinitialisation complète du plugin : %s', 'whise-integration'), esc_html($message)) . '</p></div>';
             }
+            
+            if (isset($_GET['cleanup']) && $_GET['cleanup'] === 'success') {
+                $deleted = isset($_GET['deleted']) ? intval($_GET['deleted']) : 0;
+                $errors = isset($_GET['errors']) ? intval($_GET['errors']) : 0;
+                $galleries = isset($_GET['galleries']) ? intval($_GET['galleries']) : 0;
+                $total = isset($_GET['total']) ? intval($_GET['total']) : 0;
+                echo '<div class="notice notice-success is-dismissible"><p>';
+                echo sprintf(__('Nettoyage des images terminé ! Images supprimées : %d, Erreurs : %d, Galeries nettoyées : %d, Total traité : %d', 'whise-integration'), $deleted, $errors, $galleries, $total);
+                echo '</p></div>';
+            }
         }
+    }
+
+    /**
+     * Nettoie toutes les images Whise et remet à zéro les galeries
+     * Version optimisée pour éviter les timeouts
+     */
+    public function cleanup_images() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Accès refusé');
+        }
+
+        // Vérification de sécurité
+        if (!isset($_POST['whise_cleanup_images_nonce']) || !wp_verify_nonce($_POST['whise_cleanup_images_nonce'], 'whise_cleanup_images')) {
+            wp_die('Erreur de sécurité');
+        }
+
+        // Augmenter les limites pour éviter les timeouts
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+        ini_set('max_input_time', -1);
+
+        $this->log('--- Début nettoyage des images Whise : ' . date('Y-m-d H:i:s'));
+        
+        // Traitement par lots pour éviter les timeouts
+        $batch_size = 20; // Traiter 20 images à la fois
+        $offset = 0;
+        $deleted_count = 0;
+        $error_count = 0;
+        $total_processed = 0;
+
+        do {
+            // Récupérer les attachments par lots
+            $whise_attachments = get_posts([
+                'post_type' => 'attachment',
+                'meta_key' => '_whise_original_url',
+                'numberposts' => $batch_size,
+                'offset' => $offset,
+                'post_status' => 'any'
+            ]);
+
+            if (empty($whise_attachments)) {
+                break; // Plus d'attachments à traiter
+            }
+
+            foreach ($whise_attachments as $attachment) {
+                $attachment_id = $attachment->ID;
+                $file_path = get_attached_file($attachment_id);
+                
+                // Supprimer le fichier physique
+                if ($file_path && file_exists($file_path)) {
+                    wp_delete_file($file_path);
+                }
+                
+                // Supprimer l'attachment de la base de données
+                $deleted = wp_delete_attachment($attachment_id, true);
+                
+                if ($deleted) {
+                    $deleted_count++;
+                    $this->log('SUCCESS - Image supprimée: ' . $attachment->post_title . ' (ID: ' . $attachment_id . ')');
+                } else {
+                    $error_count++;
+                    $this->log('ERROR - Échec suppression image: ' . $attachment->post_title . ' (ID: ' . $attachment_id . ')');
+                }
+                
+                $total_processed++;
+            }
+
+            $offset += $batch_size;
+            
+            // Pause pour éviter la surcharge
+            usleep(100000); // 0.1 seconde
+            
+            // Log de progression
+            if ($total_processed % 100 == 0) {
+                $this->log('INFO - Progression: ' . $total_processed . ' images traitées, ' . $deleted_count . ' supprimées');
+            }
+
+        } while (count($whise_attachments) == $batch_size);
+
+        // Nettoyer les métadonnées de galerie par lots aussi
+        $properties_offset = 0;
+        $gallery_cleaned = 0;
+        $properties_batch_size = 50;
+
+        do {
+            $properties = get_posts([
+                'post_type' => 'property',
+                'numberposts' => $properties_batch_size,
+                'offset' => $properties_offset,
+                'post_status' => 'any'
+            ]);
+
+            if (empty($properties)) {
+                break;
+            }
+
+            foreach ($properties as $property) {
+                // Supprimer la métadonnée de galerie
+                delete_post_meta($property->ID, '_whise_gallery_images');
+                
+                // Supprimer l'image mise en avant si c'était une image Whise
+                $thumbnail_id = get_post_thumbnail_id($property->ID);
+                if ($thumbnail_id) {
+                    $is_whise_image = get_post_meta($thumbnail_id, '_whise_original_url', true);
+                    if ($is_whise_image) {
+                        delete_post_thumbnail($property->ID);
+                        $this->log('DEBUG - Featured image supprimée pour: ' . $property->post_title);
+                    }
+                }
+                
+                $gallery_cleaned++;
+            }
+
+            $properties_offset += $properties_batch_size;
+            usleep(50000); // 0.05 seconde
+
+        } while (count($properties) == $properties_batch_size);
+
+        $this->log('INFO - Nettoyage terminé. Images supprimées: ' . $deleted_count . ', Erreurs: ' . $error_count . ', Galeries nettoyées: ' . $gallery_cleaned . ', Total traité: ' . $total_processed);
+
+        // Redirection avec message de succès
+        wp_redirect(admin_url('admin.php?page=whise-integration&cleanup=success&deleted=' . $deleted_count . '&errors=' . $error_count . '&galleries=' . $gallery_cleaned . '&total=' . $total_processed));
+        exit;
+    }
+
+    private function log($msg) {
+        $logs = get_option('whise_sync_logs', []);
+        if (!is_array($logs)) $logs = [];
+        $logs[] = '[' . date('Y-m-d H:i:s') . '] ' . $msg;
+        // Garde les 100 derniers logs max
+        if (count($logs) > 100) $logs = array_slice($logs, -100);
+        update_option('whise_sync_logs', $logs);
     }
 }

@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 class Whise_API {
     private $endpoint;
-    private $timeout = 15;
+    private $timeout = 60; // Augmenté à 60 secondes pour éviter les timeouts
     private $cache_ttl = 3600; // 1h
 
     public function __construct($endpoint = '') {

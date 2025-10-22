@@ -462,14 +462,28 @@ class Whise_Sync_Manager {
     public function sync_properties_batch() {
         $this->log('--- Début synchronisation Whise : ' . date('Y-m-d H:i:s'));
         
+        // Augmenter le temps d'exécution pour éviter les timeouts
+        set_time_limit(0); // Pas de limite de temps
+        ini_set('max_execution_time', 0);
+        
+        // Augmenter la mémoire disponible
+        if (function_exists('ini_set')) {
+            ini_set('memory_limit', '512M');
+        }
+        
+        $this->log('DEBUG - Configuration: max_execution_time=' . ini_get('max_execution_time') . ', memory_limit=' . ini_get('memory_limit'));
+        
         // Mise à jour des taxonomies avant l'import
         $this->fetch_and_store_whise_taxonomies();
         
         $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
         $api = new Whise_API($endpoint);
         $page = 1;
-        $per_page = 50;
+        $per_page = get_option('whise_batch_size', 25); // Réduit à 25 par défaut pour éviter les timeouts
         $total_imported = 0;
+        $whise_ids_from_api = []; // Pour tracker les IDs présents dans l'API
+        
+        $this->log('DEBUG - Configuration batch: ' . $per_page . ' biens par page');
         
         do {
             // Essayer avec filtre ShowRepresentatives pour que la liste retourne les représentants
@@ -506,14 +520,43 @@ class Whise_Sync_Manager {
                 if ($page === 1 && isset($property['representatives'])) {
                     $this->log('DEBUG - representatives in list for estate ' . ($property['id'] ?? 'n/a') . ' count: ' . (is_array($property['representatives']) ? count($property['representatives']) : 0));
                 }
-                $this->import_property($property);
-                $total_imported++;
+                
+                // Collecter l'ID Whise pour la vérification des biens obsolètes
+                if (!empty($property['id'])) {
+                    $whise_ids_from_api[] = (string)$property['id'];
+                }
+                
+                try {
+                    $this->import_property($property);
+                    $total_imported++;
+                    
+                    // Pause courte pour éviter de surcharger l'API
+                    usleep(100000); // 0.1 seconde
+                    
+                } catch (Exception $e) {
+                    $this->log('ERROR - Échec import propriété ' . ($property['id'] ?? 'inconnue') . ': ' . $e->getMessage());
+                    continue; // Continuer avec la propriété suivante
+                }
             }
             
             $page++;
+            
+            // Pause entre les pages pour éviter de surcharger l'API
+            if (count($data['estates']) === $per_page) {
+                $this->log('DEBUG - Pause de 1 seconde avant la page suivante...');
+                sleep(1);
+            }
         } while (count($data['estates']) === $per_page);
         
         $this->log('Import terminé. Total biens importés/mis à jour : ' . $total_imported);
+        
+        // Supprimer les biens qui ne sont plus dans l'API Whise
+        $cleanup_enabled = get_option('whise_cleanup_obsolete', true);
+        if ($cleanup_enabled) {
+            $this->cleanup_obsolete_properties($whise_ids_from_api);
+        } else {
+            $this->log('INFO - Nettoyage automatique désactivé, conservation de tous les biens');
+        }
     }
 
     private function log($msg) {
@@ -635,7 +678,7 @@ class Whise_Sync_Manager {
             $this->log('DEBUG - Property ' . $whise_id . ' - details contains 1849=' . ($has1849 ? 'yes' : 'no') . ' 1850=' . ($has1850 ? 'yes' : 'no'));
         }
 
-        // Traitement des images
+        // Traitement des images (URLs seulement pour le moment)
         $images = [];
         if (!empty($property['pictures'])) {
             foreach ($property['pictures'] as $picture) {
@@ -923,6 +966,69 @@ class Whise_Sync_Manager {
         
         if (is_wp_error($post_id) || !$post_id) return;
 
+        // Traitement optimisé des images - éviter les re-téléchargements
+        $gallery_attachment_ids = [];
+        $existing_gallery = get_post_meta($post_id, '_whise_gallery_images', true);
+        $skip_image_download = get_option('whise_skip_image_download', false);
+        
+        if (!empty($property['pictures']) && !$skip_image_download) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - Processing ' . count($property['pictures']) . ' images');
+            
+            foreach ($property['pictures'] as $picture) {
+                // Déterminer l'URL à utiliser selon la qualité configurée
+                $preferred_quality = get_option('whise_image_quality', 'urlXXL');
+                $image_url_to_check = '';
+                
+                // Utiliser la même logique que dans download_and_create_attachment
+                if (!empty($picture[$preferred_quality])) {
+                    $image_url_to_check = $picture[$preferred_quality];
+                } else {
+                    // Fallback : utiliser la meilleure qualité disponible
+                    if (!empty($picture['urlXXL'])) {
+                        $image_url_to_check = $picture['urlXXL'];
+                    } elseif (!empty($picture['urlLarge'])) {
+                        $image_url_to_check = $picture['urlLarge'];
+                    } elseif (!empty($picture['urlSmall'])) {
+                        $image_url_to_check = $picture['urlSmall'];
+                    }
+                }
+                
+                // Vérifier si l'image existe déjà avec la bonne qualité
+                $existing_attachment = get_posts([
+                    'post_type' => 'attachment',
+                    'meta_key' => '_whise_original_url',
+                    'meta_value' => $image_url_to_check,
+                    'numberposts' => 1
+                ]);
+                
+                if (!empty($existing_attachment)) {
+                    $gallery_attachment_ids[] = $existing_attachment[0]->ID;
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists with quality ' . $preferred_quality . ', skipping download: ' . $picture['id']);
+                } else {
+                    // Télécharger l'image et créer un attachment WordPress
+                    $attachment_id = $this->download_and_create_attachment($picture, $whise_id, $post_id);
+                    if ($attachment_id) {
+                        $gallery_attachment_ids[] = $attachment_id;
+                    }
+                }
+            }
+            
+            // Stocker les IDs des attachments de la galerie
+            if (!empty($gallery_attachment_ids)) {
+                update_post_meta($post_id, '_whise_gallery_images', $gallery_attachment_ids);
+                $this->log('DEBUG - Property ' . $whise_id . ' - Gallery updated with ' . count($gallery_attachment_ids) . ' image attachments');
+                
+                // Définir la première image comme featured image
+                if (!has_post_thumbnail($post_id)) {
+                    set_post_thumbnail($post_id, $gallery_attachment_ids[0]);
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Set featured image: attachment ID ' . $gallery_attachment_ids[0]);
+                }
+            }
+        } elseif ($skip_image_download) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - Image download disabled, keeping existing gallery');
+            $gallery_attachment_ids = $existing_gallery ?: [];
+        }
+
         // Compléter avec le représentant si disponible
         // 1) Depuis la liste: champ representatives
         if (!empty($property['representatives']) && is_array($property['representatives'])) {
@@ -945,33 +1051,44 @@ class Whise_Sync_Manager {
             $mapped_data['representative_function'] = $rep['function'] ?? '';
         }
 
-        // Mise à jour des meta avec conversion des types
+        // Mise à jour optimisée des meta avec conversion des types
+        $meta_to_update = [];
         foreach ($mapped_data as $key => $value) {
             $type = $this->get_field_type($key);
             $converted_value = $this->convert_value($value, $type);
-            update_post_meta($post_id, $key, $converted_value);
+            $meta_to_update[$key] = $converted_value;
             
             // Debug spécifique pour le champ rooms
             if ($key === 'rooms') {
                 $this->log('DEBUG - Property ' . $whise_id . ' - rooms conversion: original=' . var_export($value, true) . ', type=' . $type . ', converted=' . var_export($converted_value, true));
-                $saved_value = get_post_meta($post_id, 'rooms', true);
-                $this->log('DEBUG - Property ' . $whise_id . ' - rooms saved in DB: ' . var_export($saved_value, true) . ' (type: ' . gettype($saved_value) . ')');
             }
-            if ($key === 'latitude' || $key === 'longitude') {
-                $saved_lat = get_post_meta($post_id, 'latitude', true);
-                $saved_lng = get_post_meta($post_id, 'longitude', true);
-                $this->log('DEBUG - Property ' . $whise_id . ' - saved lat/lng in DB: ' . var_export($saved_lat, true) . '/' . var_export($saved_lng, true));
-                // Champs dédiés supplémentaires pour usage front/ACF
-                update_post_meta($post_id, 'geo_lat', (float)$saved_lat);
-                update_post_meta($post_id, 'geo_lng', (float)$saved_lng);
-                // Champ compatible ACF Google Map
-                $acf_location = [
-                    'address' => get_post_meta($post_id, 'address', true) . ', ' . get_post_meta($post_id, 'zip', true) . ' ' . get_post_meta($post_id, 'city', true),
-                    'lat' => (float)$saved_lat,
-                    'lng' => (float)$saved_lng,
-                ];
-                update_post_meta($post_id, 'immo_location', $acf_location);
-            }
+        }
+        
+        // Mise à jour en batch des métadonnées
+        foreach ($meta_to_update as $key => $value) {
+            update_post_meta($post_id, $key, $value);
+        }
+        
+        // Traitement spécial pour les coordonnées
+        if (isset($meta_to_update['latitude']) || isset($meta_to_update['longitude'])) {
+            $saved_lat = $meta_to_update['latitude'] ?? get_post_meta($post_id, 'latitude', true);
+            $saved_lng = $meta_to_update['longitude'] ?? get_post_meta($post_id, 'longitude', true);
+            $this->log('DEBUG - Property ' . $whise_id . ' - saved lat/lng in DB: ' . var_export($saved_lat, true) . '/' . var_export($saved_lng, true));
+            
+            // Champs dédiés supplémentaires pour usage front/ACF
+            update_post_meta($post_id, 'geo_lat', (float)$saved_lat);
+            update_post_meta($post_id, 'geo_lng', (float)$saved_lng);
+            
+            // Champ compatible ACF Google Map
+            $address = $meta_to_update['address'] ?? get_post_meta($post_id, 'address', true);
+            $zip = $meta_to_update['zip'] ?? get_post_meta($post_id, 'zip', true);
+            $city = $meta_to_update['city'] ?? get_post_meta($post_id, 'city', true);
+            $acf_location = [
+                'address' => $address . ', ' . $zip . ' ' . $city,
+                'lat' => (float)$saved_lat,
+                'lng' => (float)$saved_lng,
+            ];
+            update_post_meta($post_id, 'immo_location', $acf_location);
         }
 
         // Mise à jour des taxonomies - PRIORITÉ AUX SOUS-CATÉGORIES
@@ -1186,5 +1303,196 @@ class Whise_Sync_Manager {
         ];
         
         return $subcategories[(string)$subcategory_id] ?? null;
+    }
+
+    /**
+     * Télécharge une image depuis Whise et crée un attachment WordPress
+     */
+    private function download_and_create_attachment($picture, $whise_id, $post_id) {
+        if (empty($picture['id'])) {
+            return false;
+        }
+
+        // Utiliser la qualité configurée ou la meilleure disponible
+        $preferred_quality = get_option('whise_image_quality', 'urlXXL'); // Par défaut : haute qualité
+        $image_url = '';
+        
+        // Essayer d'abord la qualité préférée
+        if (!empty($picture[$preferred_quality])) {
+            $image_url = $picture[$preferred_quality];
+            $this->log('DEBUG - Property ' . $whise_id . ' - Using ' . $preferred_quality . ' (preferred quality) for image ' . $picture['id']);
+        } else {
+            // Fallback : utiliser la meilleure qualité disponible (urlXXL > urlLarge > urlSmall)
+            if (!empty($picture['urlXXL'])) {
+                $image_url = $picture['urlXXL'];
+                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlXXL (high quality fallback) for image ' . $picture['id']);
+            } elseif (!empty($picture['urlLarge'])) {
+                $image_url = $picture['urlLarge'];
+                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlLarge (medium quality fallback) for image ' . $picture['id']);
+            } elseif (!empty($picture['urlSmall'])) {
+                $image_url = $picture['urlSmall'];
+                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlSmall (low quality fallback) for image ' . $picture['id']);
+            }
+        }
+        
+        if (empty($image_url)) {
+            $this->log('ERROR - Property ' . $whise_id . ' - No image URL available for image ' . $picture['id']);
+            return false;
+        }
+        $whise_image_id = $picture['id'];
+        $image_order = $picture['order'] ?? 0;
+
+        // Vérifier si l'image existe déjà (éviter les doublons)
+        $existing_attachment = get_posts([
+            'post_type' => 'attachment',
+            'meta_key' => '_whise_original_url',
+            'meta_value' => $image_url,
+            'numberposts' => 1
+        ]);
+
+        if (!empty($existing_attachment)) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists: ' . $image_url);
+            return $existing_attachment[0]->ID;
+        }
+
+        // Télécharger l'image
+        $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image: ' . $image_url);
+        
+        $response = wp_remote_get($image_url, [
+            'timeout' => 120, // Augmenté à 2 minutes pour les images
+            'headers' => [
+                'User-Agent' => 'WordPress/Whise-Integration'
+            ]
+        ]);
+
+        if (is_wp_error($response)) {
+            $this->log('ERROR - Property ' . $whise_id . ' - Failed to download image: ' . $image_url . ' - ' . $response->get_error_message());
+            return false;
+        }
+
+        $image_data = wp_remote_retrieve_body($response);
+        if (empty($image_data)) {
+            $this->log('ERROR - Property ' . $whise_id . ' - Empty image data for: ' . $image_url);
+            return false;
+        }
+
+        // Déterminer l'extension du fichier
+        $file_extension = 'jpg'; // Par défaut
+        $content_type = wp_remote_retrieve_header($response, 'content-type');
+        if ($content_type) {
+            switch ($content_type) {
+                case 'image/png':
+                    $file_extension = 'png';
+                    break;
+                case 'image/gif':
+                    $file_extension = 'gif';
+                    break;
+                case 'image/webp':
+                    $file_extension = 'webp';
+                    break;
+            }
+        }
+
+        // Créer un nom de fichier unique
+        $filename = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id . '.' . $file_extension;
+
+        // Utiliser wp_upload_bits pour créer le fichier
+        $upload = wp_upload_bits($filename, null, $image_data);
+        
+        if ($upload['error']) {
+            $this->log('ERROR - Property ' . $whise_id . ' - Upload failed: ' . $upload['error']);
+            return false;
+        }
+
+        // Créer l'attachment
+        $attachment = [
+            'post_mime_type' => $content_type ?: 'image/jpeg',
+            'post_title' => 'Image propriété ' . $whise_id . ' - ' . $image_order,
+            'post_content' => '',
+            'post_status' => 'inherit',
+            'post_parent' => $post_id
+        ];
+
+        $attachment_id = wp_insert_attachment($attachment, $upload['file'], $post_id);
+        
+        if (is_wp_error($attachment_id)) {
+            $this->log('ERROR - Property ' . $whise_id . ' - Failed to create attachment: ' . $attachment_id->get_error_message());
+            return false;
+        }
+
+        // Générer les métadonnées de l'image
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        $attachment_data = wp_generate_attachment_metadata($attachment_id, $upload['file']);
+        wp_update_attachment_metadata($attachment_id, $attachment_data);
+
+        // Ajouter les métadonnées spécifiques Whise
+        update_post_meta($attachment_id, '_whise_original_url', $image_url);
+        update_post_meta($attachment_id, '_whise_image_id', $whise_image_id);
+        update_post_meta($attachment_id, '_whise_image_order', $image_order);
+        update_post_meta($attachment_id, '_wp_attachment_image_alt', 'Image propriété ' . $whise_id);
+
+        $this->log('DEBUG - Property ' . $whise_id . ' - Created attachment ID ' . $attachment_id . ' for image ' . $whise_image_id);
+        
+        return $attachment_id;
+    }
+
+    /**
+     * Supprime les biens qui ne sont plus présents dans l'API Whise
+     */
+    private function cleanup_obsolete_properties($whise_ids_from_api) {
+        if (empty($whise_ids_from_api)) {
+            $this->log('WARN - Aucun ID Whise reçu de l\'API, impossible de nettoyer les biens obsolètes');
+            return;
+        }
+
+        $this->log('DEBUG - Nettoyage des biens obsolètes. IDs présents dans l\'API: ' . count($whise_ids_from_api));
+        
+        // Récupérer tous les biens WordPress avec leur whise_id
+        $all_properties = get_posts([
+            'post_type' => 'property',
+            'post_status' => 'any',
+            'numberposts' => -1,
+            'meta_query' => [
+                [
+                    'key' => 'whise_id',
+                    'compare' => 'EXISTS'
+                ]
+            ]
+        ]);
+
+        $deleted_count = 0;
+        $kept_count = 0;
+
+        foreach ($all_properties as $property) {
+            $whise_id = get_post_meta($property->ID, 'whise_id', true);
+            
+            if (empty($whise_id)) {
+                $this->log('WARN - Property ' . $property->ID . ' n\'a pas de whise_id, ignoré');
+                continue;
+            }
+
+            // Vérifier si ce whise_id est encore présent dans l'API
+            if (!in_array((string)$whise_id, $whise_ids_from_api, true)) {
+                // Le bien n'est plus dans l'API, le supprimer
+                $this->log('INFO - Suppression du bien obsolète: ' . $property->post_title . ' (ID: ' . $property->ID . ', Whise ID: ' . $whise_id . ')');
+                
+                // Supprimer définitivement le bien et ses métadonnées
+                $deleted = wp_delete_post($property->ID, true);
+                
+                if ($deleted) {
+                    $deleted_count++;
+                    $this->log('SUCCESS - Bien supprimé: ' . $property->post_title . ' (ID: ' . $property->ID . ')');
+                } else {
+                    $this->log('ERROR - Échec de suppression du bien: ' . $property->post_title . ' (ID: ' . $property->ID . ')');
+                }
+            } else {
+                $kept_count++;
+            }
+        }
+
+        $this->log('INFO - Nettoyage terminé. Biens supprimés: ' . $deleted_count . ', Biens conservés: ' . $kept_count);
+        
+        // Mettre à jour le timestamp de la dernière synchronisation
+        update_option('whise_last_sync', current_time('mysql'));
     }
 }
