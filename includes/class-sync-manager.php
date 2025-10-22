@@ -993,23 +993,119 @@ class Whise_Sync_Manager {
                     }
                 }
                 
-                // Vérifier si l'image existe déjà avec la bonne qualité
-                $existing_attachment = get_posts([
+                // ÉTAPE 1 : Détecter et supprimer les images de mauvaise qualité
+                $whise_image_id = $picture['id'];
+                $image_order = $picture['order'] ?? 0;
+                
+                // Chercher les images existantes par whise_image_id
+                $all_quality_attachments = get_posts([
                     'post_type' => 'attachment',
-                    'meta_key' => '_whise_original_url',
-                    'meta_value' => $image_url_to_check,
-                    'numberposts' => 1
+                    'meta_query' => [
+                        [
+                            'key' => '_whise_image_id',
+                            'value' => $whise_image_id,
+                            'compare' => '='
+                        ]
+                    ],
+                    'numberposts' => -1
                 ]);
                 
-                if (!empty($existing_attachment)) {
-                    $gallery_attachment_ids[] = $existing_attachment[0]->ID;
-                    $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists with quality ' . $preferred_quality . ', skipping download: ' . $picture['id']);
-                } else {
-                    // Télécharger l'image et créer un attachment WordPress
-                    $attachment_id = $this->download_and_create_attachment($picture, $whise_id, $post_id);
-                    if ($attachment_id) {
-                        $gallery_attachment_ids[] = $attachment_id;
+                // Si pas trouvé par whise_image_id, chercher par pattern de nom de fichier
+                if (empty($all_quality_attachments)) {
+                    $filename_pattern = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id;
+                    global $wpdb;
+                    $attachment_ids = $wpdb->get_col($wpdb->prepare(
+                        "SELECT p.ID FROM {$wpdb->posts} p 
+                        INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                        WHERE p.post_type = 'attachment' 
+                        AND pm.meta_key = '_wp_attached_file'
+                        AND pm.meta_value LIKE %s",
+                        '%' . $wpdb->esc_like($filename_pattern) . '%'
+                    ));
+                    
+                    if (!empty($attachment_ids)) {
+                        foreach ($attachment_ids as $att_id) {
+                            $all_quality_attachments[] = get_post($att_id);
+                        }
+                        $this->log('DEBUG - Property ' . $whise_id . ' - Found ' . count($attachment_ids) . ' images by filename pattern for image ' . $whise_image_id);
                     }
+                }
+                
+                // Hiérarchie de qualité
+                $quality_hierarchy = ['urlXXL', 'urlLarge', 'urlSmall'];
+                $preferred_quality_level = array_search($preferred_quality, $quality_hierarchy);
+                $force_redownload = false;
+                
+                // Vérifier et supprimer les images de qualité inférieure
+                foreach ($all_quality_attachments as $old_attachment) {
+                    if (!$old_attachment || !isset($old_attachment->ID)) continue;
+                    
+                    $old_url = get_post_meta($old_attachment->ID, '_whise_original_url', true);
+                    
+                    // Détecter la qualité de l'ancienne image
+                    $old_quality_level = -1;
+                    if (strpos($old_url, '/1600/') !== false || strpos($old_url, 'urlXXL') !== false) {
+                        $old_quality_level = 0; // urlXXL
+                    } elseif (strpos($old_url, '/640/') !== false || strpos($old_url, 'urlLarge') !== false) {
+                        $old_quality_level = 1; // urlLarge
+                    } elseif (strpos($old_url, '/200/') !== false || strpos($old_url, 'urlSmall') !== false) {
+                        $old_quality_level = 2; // urlSmall
+                    }
+                    
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Checking attachment ID ' . $old_attachment->ID . ' - old quality level: ' . $old_quality_level . ', preferred: ' . $preferred_quality_level);
+                    
+                    // Si l'ancienne image est de qualité inférieure, la supprimer
+                    if ($old_quality_level > $preferred_quality_level && $old_quality_level !== -1) {
+                        $this->log('DEBUG - Property ' . $whise_id . ' - Deleting lower quality image (level ' . $old_quality_level . ' vs ' . $preferred_quality_level . '): attachment ID ' . $old_attachment->ID . ' URL: ' . $old_url);
+                        
+                        // Récupérer le chemin du fichier AVANT de supprimer l'attachment
+                        $file_path = get_attached_file($old_attachment->ID);
+                        
+                        // Supprimer l'attachment de la DB
+                        wp_delete_attachment($old_attachment->ID, true);
+                        
+                        // Supprimer le fichier physique et ses variantes
+                        if ($file_path && file_exists($file_path)) {
+                            @unlink($file_path);
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Deleted physical file: ' . basename($file_path));
+                            
+                            // Supprimer les variantes (-1, -2, etc.)
+                            $path_info = pathinfo($file_path);
+                            $filename_without_ext = $path_info['filename'];
+                            for ($i = 1; $i <= 10; $i++) {
+                                $variant_path = $path_info['dirname'] . '/' . $filename_without_ext . '-' . $i . '.' . $path_info['extension'];
+                                if (file_exists($variant_path)) {
+                                    @unlink($variant_path);
+                                    $this->log('DEBUG - Property ' . $whise_id . ' - Deleted variant file: ' . basename($variant_path));
+                                }
+                            }
+                        }
+                        
+                        $force_redownload = true;
+                    }
+                }
+                
+                // ÉTAPE 2 : Vérifier si l'image de bonne qualité existe déjà
+                if (!$force_redownload) {
+                    $existing_attachment = get_posts([
+                        'post_type' => 'attachment',
+                        'meta_key' => '_whise_original_url',
+                        'meta_value' => $image_url_to_check,
+                        'numberposts' => 1
+                    ]);
+                    
+                    if (!empty($existing_attachment)) {
+                        $gallery_attachment_ids[] = $existing_attachment[0]->ID;
+                        $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists with quality ' . $preferred_quality . ', skipping download: ' . $picture['id']);
+                        continue; // Passer à l'image suivante
+                    }
+                }
+                
+                // ÉTAPE 3 : Télécharger l'image
+                $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image ' . $picture['id'] . ' in quality ' . $preferred_quality);
+                $attachment_id = $this->download_and_create_attachment($picture, $whise_id, $post_id);
+                if ($attachment_id) {
+                    $gallery_attachment_ids[] = $attachment_id;
                 }
             }
             
@@ -1395,6 +1491,26 @@ class Whise_Sync_Manager {
 
         // Créer un nom de fichier unique
         $filename = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id . '.' . $file_extension;
+        
+        // Vérifier si un fichier avec ce nom (ou ses variantes) existe déjà
+        $upload_dir = wp_upload_dir();
+        $target_path = $upload_dir['path'] . '/' . $filename;
+        
+        // Supprimer le fichier existant et ses variantes (-1, -2, etc.) pour éviter les doublons
+        if (file_exists($target_path)) {
+            @unlink($target_path);
+            $this->log('DEBUG - Property ' . $whise_id . ' - Deleted existing file to avoid duplicates: ' . $filename);
+        }
+        
+        // Supprimer aussi les variantes avec suffixes (-1, -2, -3, etc.)
+        $filename_without_ext = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id;
+        for ($i = 1; $i <= 10; $i++) {
+            $variant_path = $upload_dir['path'] . '/' . $filename_without_ext . '-' . $i . '.' . $file_extension;
+            if (file_exists($variant_path)) {
+                @unlink($variant_path);
+                $this->log('DEBUG - Property ' . $whise_id . ' - Deleted duplicate variant: ' . basename($variant_path));
+            }
+        }
 
         // Utiliser wp_upload_bits pour créer le fichier
         $upload = wp_upload_bits($filename, null, $image_data);

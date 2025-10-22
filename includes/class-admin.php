@@ -249,6 +249,8 @@ class Whise_Admin {
                         <button type="submit" class="button button-secondary" onclick="return confirm('<?php _e('Êtes-vous sûr de vouloir réinitialiser les taxonomies ? Cela peut affecter les propriétés existantes.', 'whise-integration'); ?>')"><?php _e('Réinitialiser les taxonomies', 'whise-integration'); ?></button>
                     </form>
                     
+                    <a href="<?php echo plugins_url('cleanup-duplicates.php', dirname(__FILE__)); ?>" class="button button-secondary" style="background-color: #ff9800; border-color: #ff9800; color: white;" target="_blank"><?php _e('🧹 Nettoyer les doublons d\'images', 'whise-integration'); ?></a>
+                    
                     <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="display: inline;">
                         <?php wp_nonce_field('whise_force_reset', 'whise_force_reset_nonce'); ?>
                         <input type="hidden" name="action" value="whise_force_reset">
