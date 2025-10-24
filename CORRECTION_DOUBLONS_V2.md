@@ -320,3 +320,4 @@ SELECT ROW_COUNT() as deleted_count;
 **Date de correction V2 :** Octobre 2025  
 **Version du plugin :** 1.0.0  
 **Status :** ✅ Fonctionnel et testé
+
