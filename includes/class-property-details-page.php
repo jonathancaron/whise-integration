@@ -119,66 +119,133 @@ class Whise_Property_Details_Page {
         $sections = [
             'identification' => [
                 'title' => 'Identification',
-                'fields' => ['whise_id', 'reference'],
+                'fields' => ['whise_id', 'reference', 'client_id', 'client_name', 'office_id', 'office_name'],
                 'icon' => 'dashicons-id'
+            ],
+            'type_categorie' => [
+                'title' => 'Type et catégorie',
+                'fields' => ['property_type', 'property_type_id', 'sub_category', 'sub_category_id', 'transaction_type', 'transaction_type_id'],
+                'icon' => 'dashicons-category'
+            ],
+            'etat_statut' => [
+                'title' => 'État et statut',
+                'fields' => ['state', 'state_id', 'status', 'status_id', 'purpose_status', 'purpose_status_id', 'transaction_status', 'construction_year', 'renovation_year'],
+                'icon' => 'dashicons-info'
             ],
             'prix' => [
                 'title' => 'Prix et conditions',
-                'fields' => ['price', 'price_formatted', 'price_type', 'price_supplement', 'charges', 'price_conditions'],
+                'fields' => ['price', 'price_formatted', 'price_type', 'price_supplement', 'charges', 'price_conditions', 'price_per_sqm'],
                 'icon' => 'dashicons-money-alt'
             ],
             'surfaces' => [
                 'title' => 'Surfaces',
-                'fields' => ['surface', 'total_area', 'land_area', 'commercial_area', 'built_area'],
+                'fields' => ['surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 'min_area', 'max_area', 'ground_area'],
                 'icon' => 'dashicons-editor-expand'
             ],
             'pieces' => [
-                'title' => 'Pièces',
-                'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors'],
+                'title' => 'Pièces et espaces',
+                'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors', 'number_of_floors', 'number_of_toilets', 'fronts'],
                 'icon' => 'dashicons-layout'
             ],
             'localisation' => [
                 'title' => 'Localisation',
-                'fields' => ['address', 'city', 'postal_code', 'country', 'latitude', 'longitude'],
+                'fields' => ['address', 'number', 'box', 'zip', 'city', 'postal_code', 'country', 'latitude', 'longitude'],
                 'icon' => 'dashicons-location'
             ],
             'energie' => [
-                'title' => 'Énergie',
-                'fields' => ['energy_class', 'epc_value', 'heating_type'],
+                'title' => 'Énergie et chauffage',
+                'fields' => ['energy_class', 'epc_value', 'heating_type', 'heating_group', 'electricity', 'oil_tank', 'insulation'],
                 'icon' => 'dashicons-energy'
             ],
-            'equipements' => [
-                'title' => 'Équipements',
-                'fields' => [
-                    'kitchen_type', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool',
-                    'elevator', 'cellar', 'attic'
-                ],
+            'cadastre' => [
+                'title' => 'Données cadastrales',
+                'fields' => ['cadastral_income', 'cadastral_data'],
+                'icon' => 'dashicons-admin-site-alt3'
+            ],
+            'equipements_base' => [
+                'title' => 'Équipements de base',
+                'fields' => ['kitchen_type', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished'],
                 'icon' => 'dashicons-admin-tools'
+            ],
+            'equipements_confort' => [
+                'title' => 'Équipements de confort',
+                'fields' => ['air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central'],
+                'icon' => 'dashicons-star-filled'
+            ],
+            'equipements_reglementaire' => [
+                'title' => 'Équipements réglementaires',
+                'fields' => ['toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment'],
+                'icon' => 'dashicons-clipboard'
             ],
             'proximite' => [
                 'title' => 'Proximité',
-                'fields' => ['proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital'],
+                'fields' => ['proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital', 'proximity_city_center'],
                 'icon' => 'dashicons-location-alt'
+            ],
+            'orientation_environnement' => [
+                'title' => 'Orientation et environnement',
+                'fields' => ['orientation', 'view', 'building_orientation', 'environment_type'],
+                'icon' => 'dashicons-visibility'
             ],
             'disponibilite' => [
                 'title' => 'Disponibilité',
                 'fields' => ['availability', 'is_immediately_available', 'available_date'],
                 'icon' => 'dashicons-calendar-alt'
             ],
+            'bureaux' => [
+                'title' => 'Bureaux (spécifique)',
+                'fields' => ['office_1', 'office_2', 'office_3'],
+                'icon' => 'dashicons-building'
+            ],
+            'materiaux' => [
+                'title' => 'Matériaux et finitions',
+                'fields' => ['floor_material', 'ground_destination'],
+                'icon' => 'dashicons-hammer'
+            ],
+            'dimensions' => [
+                'title' => 'Dimensions détaillées',
+                'fields' => ['width_of_facade', 'depth_of_land', 'width_of_street_front', 'built_area_detail'],
+                'icon' => 'dashicons-editor-justify'
+            ],
+            'dates' => [
+                'title' => 'Dates importantes',
+                'fields' => ['create_date', 'update_date', 'put_online_date', 'price_change_date'],
+                'icon' => 'dashicons-clock'
+            ],
             'descriptions' => [
                 'title' => 'Descriptions',
-                'fields' => ['description', 'description_short'],
+                'fields' => ['description', 'short_description', 'sms_description'],
                 'icon' => 'dashicons-editor-alignleft'
             ],
-            'media' => [
-                'title' => 'Images',
+            'media_liens' => [
+                'title' => 'Médias et liens',
+                'fields' => ['link_3d_model', 'link_virtual_visit', 'link_video'],
+                'icon' => 'dashicons-video-alt3'
+            ],
+            'images' => [
+                'title' => 'Galerie d\'images',
                 'fields' => ['images'],
                 'icon' => 'dashicons-format-gallery'
+            ],
+            'representant' => [
+                'title' => 'Représentant',
+                'fields' => ['representative_id', 'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_function', 'representative_picture'],
+                'icon' => 'dashicons-businessman'
+            ],
+            'details_avances' => [
+                'title' => 'Détails avancés',
+                'fields' => ['net_area', 'garden_area', 'tenant_charges', 'professional_liberal_possibility', 'fitness_room_area', 'currency', 'sub_category_id', 'property_type_language', 'transaction_type_language', 'status_language'],
+                'icon' => 'dashicons-admin-generic'
             ],
             'multilingual' => [
                 'title' => 'Descriptions multilingues',
                 'fields' => ['descriptions_multilingual'],
                 'icon' => 'dashicons-translation'
+            ],
+            'technique' => [
+                'title' => 'Données techniques (debug)',
+                'fields' => ['details'],
+                'icon' => 'dashicons-code-standards'
             ]
         ];
 
@@ -192,11 +259,20 @@ class Whise_Property_Details_Page {
             
             foreach ($section['fields'] as $field) {
                 $value = get_post_meta($property->ID, $field, true);
+                
+                // Créer un label lisible avec le nom du champ en parenthèses
+                $field_label = ucfirst(str_replace('_', ' ', $field));
+                $field_label_with_key = $field_label . ' <span style="color: #999; font-size: 0.85em; font-weight: normal;">(' . $field . ')</span>';
+                
                 echo '<div class="whise-field">';
-                echo '<label>' . esc_html(ucfirst(str_replace('_', ' ', $field))) . ':</label>';
+                echo '<label>' . $field_label_with_key . ':</label>';
                 
                 if ($field === 'images') {
                     $this->display_property_gallery($property->ID);
+                } elseif ($field === 'representative_picture' && !empty($value)) {
+                    echo '<div class="whise-representative-picture">';
+                    echo '<img src="' . esc_url($value) . '" alt="Photo représentant" style="max-width: 150px; border-radius: 4px;">';
+                    echo '</div>';
                 } elseif ($field === 'descriptions_multilingual' && is_array($value)) {
                     echo '<div class="whise-multilingual-descriptions">';
                     foreach ($value as $desc_type => $languages) {
@@ -213,13 +289,61 @@ class Whise_Property_Details_Page {
                         }
                     }
                     echo '</div>';
-                } elseif (is_bool($value) || in_array($value, ['0', '1', '', null])) {
+                } elseif ($field === 'details' && is_array($value)) {
+                    // Affichage spécial pour les détails Whise (format tableau)
+                    echo '<div class="whise-details-table">';
+                    echo '<table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">';
+                    echo '<thead><tr style="background: #f0f0f0;">';
+                    echo '<th style="padding: 8px; text-align: left; border: 1px solid #ddd;">ID</th>';
+                    echo '<th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Label</th>';
+                    echo '<th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Valeur</th>';
+                    echo '<th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Groupe</th>';
+                    echo '</tr></thead><tbody>';
+                    
+                    foreach ($value as $detail) {
+                        echo '<tr>';
+                        echo '<td style="padding: 6px; border: 1px solid #ddd;">' . esc_html($detail['id'] ?? '') . '</td>';
+                        echo '<td style="padding: 6px; border: 1px solid #ddd;">' . esc_html($detail['label'] ?? '') . '</td>';
+                        echo '<td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">' . esc_html($detail['value'] ?? '') . '</td>';
+                        echo '<td style="padding: 6px; border: 1px solid #ddd; color: #666;">' . esc_html($detail['group'] ?? '') . '</td>';
+                        echo '</tr>';
+                    }
+                    
+                    echo '</tbody></table>';
+                    echo '<p style="margin-top: 10px; font-size: 0.85em; color: #666;">Total : ' . count($value) . ' détails</p>';
+                    echo '</div>';
+                } elseif (is_array($value)) {
+                    // Affichage des autres arrays (comme cadastral_data)
+                    echo '<div class="whise-array-value">';
+                    echo '<pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 0.9em; overflow-x: auto;">';
+                    echo esc_html(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                    echo '</pre>';
+                    echo '</div>';
+                } elseif (is_bool($value) || in_array($field, ['parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished', 'air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central', 'electricity', 'oil_tank', 'insulation', 'toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment', 'is_immediately_available'])) {
                     $is_true = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                     echo '<span class="whise-boolean-' . ($is_true ? 'true' : 'false') . '">';
-                    echo $is_true ? '✓' : '✗';
+                    echo $is_true ? '✓ Oui' : '✗ Non';
                     echo '</span>';
+                } elseif (in_array($field, ['link_3d_model', 'link_virtual_visit', 'link_video']) && !empty($value)) {
+                    echo '<div class="whise-link">';
+                    echo '<a href="' . esc_url($value) . '" target="_blank" rel="noopener noreferrer">';
+                    echo '<span class="dashicons dashicons-external"></span> ' . esc_html($value);
+                    echo '</a>';
+                    echo '</div>';
+                } elseif (in_array($field, ['representative_email']) && !empty($value)) {
+                    echo '<div class="whise-email">';
+                    echo '<a href="mailto:' . esc_attr($value) . '">' . esc_html($value) . '</a>';
+                    echo '</div>';
+                } elseif (in_array($field, ['representative_phone', 'representative_mobile']) && !empty($value)) {
+                    echo '<div class="whise-phone">';
+                    echo '<a href="tel:' . esc_attr($value) . '">' . esc_html($value) . '</a>';
+                    echo '</div>';
+                } elseif (in_array($field, ['description', 'short_description', 'sms_description']) && !empty($value)) {
+                    echo '<div class="whise-description-text" style="background: #f9f9f9; padding: 15px; border-left: 3px solid #2271b1; border-radius: 4px;">';
+                    echo wp_kses_post($value);
+                    echo '</div>';
                 } else {
-                    echo '<div class="whise-value">' . (empty($value) ? '—' : esc_html($value)) . '</div>';
+                    echo '<div class="whise-value">' . (empty($value) && $value !== '0' && $value !== 0 ? '<span style="color: #ccc;">—</span>' : esc_html($value)) . '</div>';
                 }
                 
                 echo '</div>';

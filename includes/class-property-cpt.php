@@ -295,7 +295,7 @@ class Whise_Property_CPT {
         $field_types = [
             'string' => ['whise_id', 'reference', 'address', 'city', 'postal_code', 'country', 'description', 'description_short',
                         'price_formatted', 'price_type', 'price_supplement', 'price_conditions', 'property_type', 
-                        'transaction_type', 'status', 'purpose_status', 'transaction_status', 'energy_class', 'heating_type', 'kitchen_type',
+                        'transaction_type', 'status', 'state', 'state_id', 'purpose_status', 'transaction_status', 'energy_class', 'heating_type', 'kitchen_type',
                         'proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital',
                         'orientation', 'view', 'availability', 'available_date',
                         'link_3d_model', 'link_virtual_visit', 'link_video',
@@ -338,6 +338,8 @@ class Whise_Property_CPT {
             'property_type' => ['desc' => 'Type (appartement/maison/bureau)', 'type' => 'string'],
             'transaction_type' => ['desc' => 'Vente/Location', 'type' => 'string'],
             'status' => ['desc' => 'Statut du bien', 'type' => 'string'],
+            'state' => ['desc' => 'État du bâtiment', 'type' => 'string'],
+            'state_id' => ['desc' => 'ID de l\'état du bâtiment', 'type' => 'string'],
             'purpose_status' => ['desc' => 'Statut de transaction Whise (texte)', 'type' => 'string'],
             'purpose_status_id' => ['desc' => 'ID du statut de transaction Whise', 'type' => 'number'],
             'transaction_status' => ['desc' => 'Statut simplifié (vente/location/vendu/sous_option)', 'type' => 'string'],
@@ -567,40 +569,75 @@ class Whise_Property_CPT {
         $field_groups = [
             'identification' => [
                 'title' => 'Identification',
-                'fields' => ['whise_id', 'reference']
+                'fields' => ['whise_id', 'reference', 'client_id', 'client_name', 'office_id', 'office_name']
+            ],
+            'type_categorie' => [
+                'title' => 'Type et catégorie',
+                'fields' => ['property_type', 'property_type_id', 'sub_category', 'sub_category_id', 'transaction_type', 'transaction_type_id']
+            ],
+            'etat_statut' => [
+                'title' => 'État et statut',
+                'fields' => ['state', 'state_id', 'status', 'status_id', 'purpose_status', 'purpose_status_id', 'transaction_status', 'construction_year', 'renovation_year']
             ],
             'prix' => [
                 'title' => 'Prix et conditions',
-                'fields' => ['price', 'price_formatted', 'price_type', 'price_supplement', 'charges', 'price_conditions']
+                'fields' => ['price', 'price_formatted', 'price_type', 'price_supplement', 'charges', 'price_conditions', 'price_per_sqm']
             ],
             'surfaces' => [
                 'title' => 'Surfaces',
-                'fields' => ['surface', 'total_area', 'land_area', 'commercial_area', 'built_area']
+                'fields' => ['surface', 'total_area', 'land_area', 'commercial_area', 'built_area', 'min_area', 'max_area', 'ground_area']
             ],
             'pieces' => [
-                'title' => 'Pièces',
-                'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors']
-            ],
-            'statut_transaction' => [
-                'title' => 'Statut de transaction',
-                'fields' => ['transaction_status', 'purpose_status', 'purpose_status_id']
+                'title' => 'Pièces et espaces',
+                'fields' => ['rooms', 'bedrooms', 'bathrooms', 'floors', 'number_of_floors', 'number_of_toilets', 'fronts']
             ],
             'localisation' => [
                 'title' => 'Localisation',
-                'fields' => ['address', 'city', 'postal_code', 'country', 'latitude', 'longitude']
+                'fields' => ['address', 'number', 'box', 'zip', 'city', 'postal_code', 'country', 'latitude', 'longitude']
             ],
             'energie' => [
-                'title' => 'Énergie',
-                'fields' => ['energy_class', 'epc_value', 'heating_type']
+                'title' => 'Énergie et chauffage',
+                'fields' => ['energy_class', 'epc_value', 'heating_type', 'heating_group', 'electricity', 'oil_tank', 'insulation']
             ],
-            'equipements' => [
-                'title' => 'Équipements',
-                'fields' => ['kitchen_type', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 
-                           'elevator', 'cellar', 'attic']
+            'cadastre' => [
+                'title' => 'Données cadastrales',
+                'fields' => ['cadastral_income']
+            ],
+            'equipements_base' => [
+                'title' => 'Équipements de base',
+                'fields' => ['kitchen_type', 'parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished']
+            ],
+            'equipements_confort' => [
+                'title' => 'Équipements de confort',
+                'fields' => ['air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central']
+            ],
+            'equipements_reglementaire' => [
+                'title' => 'Équipements réglementaires',
+                'fields' => ['toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment']
             ],
             'proximite' => [
                 'title' => 'Proximité',
-                'fields' => ['proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital']
+                'fields' => ['proximity_school', 'proximity_shops', 'proximity_transport', 'proximity_hospital', 'proximity_city_center']
+            ],
+            'orientation_environnement' => [
+                'title' => 'Orientation et environnement',
+                'fields' => ['orientation', 'view', 'building_orientation', 'environment_type']
+            ],
+            'disponibilite' => [
+                'title' => 'Disponibilité',
+                'fields' => ['availability', 'is_immediately_available', 'available_date']
+            ],
+            'dimensions' => [
+                'title' => 'Dimensions détaillées',
+                'fields' => ['width_of_facade', 'depth_of_land', 'width_of_street_front', 'built_area_detail']
+            ],
+            'dates' => [
+                'title' => 'Dates importantes',
+                'fields' => ['create_date', 'update_date', 'put_online_date', 'price_change_date']
+            ],
+            'representant' => [
+                'title' => 'Représentant',
+                'fields' => ['representative_id', 'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_function']
             ]
         ];
 
@@ -630,16 +667,20 @@ class Whise_Property_CPT {
                 $value = get_post_meta($post->ID, $field, true);
                 $field_desc = isset($fields[$field]['desc']) ? $fields[$field]['desc'] : '';
                 
+                // Label avec meta key
+                $field_label = ucfirst(str_replace('_', ' ', $field));
+                $field_label_with_key = $field_label . ' <span style="color: #999; font-size: 0.85em; font-weight: normal;">(' . $field . ')</span>';
+                
                 echo '<div class="whise-field-row">';
                 echo '<div class="whise-field-label" title="' . esc_attr($field_desc) . '">' 
-                     . esc_html(ucfirst(str_replace('_', ' ', $field))) . '</div>';
+                     . $field_label_with_key . '</div>';
                 echo '<div class="whise-field-value">';
                 
                 // Formatage spécial pour les booléens
-                if (is_bool($value) || in_array($value, ['0', '1', '', null])) {
+                if (is_bool($value) || in_array($field, ['parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished', 'air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central', 'electricity', 'oil_tank', 'insulation', 'toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment', 'is_immediately_available'])) {
                     $is_true = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                     echo '<span class="whise-boolean-' . ($is_true ? 'true' : 'false') . '">';
-                    echo $is_true ? '✓' : '✗';
+                    echo $is_true ? '✓ Oui' : '✗ Non';
                     echo '</span>';
                 } else {
                     echo esc_html($value ?: '—');

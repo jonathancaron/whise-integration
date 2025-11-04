@@ -75,6 +75,8 @@ class Whise_Sync_Manager {
             'status' => 'string',
             'status_id' => 'string',
             'status_language' => 'string',
+            'state' => 'string',
+            'state_id' => 'string',
             'purpose_status' => 'string',
             'purpose_status_id' => 'number',
             'transaction_status' => 'string',
@@ -427,6 +429,7 @@ class Whise_Sync_Manager {
             'categories' => 'v1/estates/categories',
             'purposes' => 'v1/estates/purposes',
             'statuses' => 'v1/estates/statuses',
+            'states' => 'v1/estates/states',
         ];
         
         $results = [];
@@ -655,6 +658,21 @@ class Whise_Sync_Manager {
         $whise_taxonomies = get_option('whise_taxonomies_full', []);
         $this->log('DEBUG - Property ' . $whise_id . ' - available taxonomies: ' . json_encode(array_keys($whise_taxonomies)));
         
+        // Récupération du nom de l'état depuis la taxonomie
+        $state_name = '';
+        $state_id = $property['state']['id'] ?? '';
+        if ($state_id && !empty($whise_taxonomies['states'])) {
+            $state_name = $this->find_whise_taxonomy_name($state_id, $whise_taxonomies['states']);
+        }
+        // Si pas trouvé dans la taxonomie, utiliser les valeurs par défaut
+        if (empty($state_name)) {
+            $state_name = $this->get_default_state_name($state_id);
+        }
+        // Si toujours vide, essayer displayName/name de l'API
+        if (empty($state_name)) {
+            $state_name = $property['state']['displayName'] ?? $property['state']['name'] ?? '';
+        }
+        
         // Traitement des détails
         $details = [];
         if (!empty($property['details'])) {
@@ -777,8 +795,8 @@ class Whise_Sync_Manager {
             'status' => $property['status']['displayName'] ?? $property['status']['name'] ?? '',
             'status_id' => $property['status']['id'] ?? '',
             'status_language' => $property['status']['languageId'] ?? '',
-            'state' => $property['state']['displayName'] ?? $property['state']['name'] ?? '',
-            'state_id' => $property['state']['id'] ?? '',
+            'state' => $state_name,
+            'state_id' => $state_id,
             'sub_categories' => $property['subCategories'] ?? [],
             'sub_category' => $property['subCategory']['displayName'] ?? $property['subCategory']['name'] ?? '',
             'sub_category_id' => $property['subCategory']['id'] ?? '',
@@ -1369,6 +1387,22 @@ class Whise_Sync_Manager {
         ];
         
         return $default_statuses[(string)$status_id] ?? null;
+    }
+
+    /**
+     * Retourne un nom d'état du bâtiment par défaut basé sur l'ID Whise
+     */
+    private function get_default_state_name($state_id) {
+        $default_states = [
+            '1' => 'Excellent état',
+            '2' => 'Bon état',
+            '3' => 'À rafraîchir',
+            '4' => 'À rénover',
+            '5' => 'Neuf',
+            '6' => 'Comme neuf'
+        ];
+        
+        return $default_states[(string)$state_id] ?? null;
     }
 
     /**
