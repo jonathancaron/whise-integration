@@ -4,6 +4,20 @@ if (!defined('ABSPATH')) exit;
 class Whise_Sync_Manager {
 
     /**
+     * Retourne la liste des statuts à exclure (non utiles pour l'affichage public)
+     * @return array Tableau associatif [id => nom]
+     */
+    private function get_excluded_status_ids() {
+        return [
+            8 => 'retiré v.',
+            10 => 'suspendu v.',
+            19 => 'prospection',
+            20 => 'préparation',
+            24 => 'estimation v.'
+        ];
+    }
+
+    /**
      * Traite et convertit une valeur selon son type défini
      */
     private function convert_value($value, $type) {
@@ -172,6 +186,24 @@ class Whise_Sync_Manager {
             // Descriptions
             'short_description' => 'string',
             'sms_description' => 'string',
+            
+            // Descriptions multilingues - Short Description
+            'short_description_fr' => 'string',
+            'short_description_nl' => 'string',
+            'short_description_en' => 'string',
+            
+            // Descriptions multilingues - SMS
+            'sms_description_fr' => 'string',
+            'sms_description_nl' => 'string',
+            'sms_description_en' => 'string',
+            
+            // Descriptions multilingues - Long Description
+            'description_fr' => 'string',
+            'description_nl' => 'string',
+            'description_en' => 'string',
+            
+            // Structure multilingue complète
+            'descriptions_multilingual' => 'array',
             
             // Images
             'images' => 'array',
@@ -489,13 +521,17 @@ class Whise_Sync_Manager {
         $this->log('DEBUG - Configuration batch: ' . $per_page . ' biens par page');
         
         do {
-            // Essayer avec filtre ShowRepresentatives pour que la liste retourne les représentants
+            // Essayer avec filtres pour récupérer les représentants et toutes les langues
             $baseParams = [ 'page' => $page, 'pageSize' => $per_page ];
             $variants = [
-                $baseParams + [ 'filter' => [ 'ShowRepresentatives' => true ] ],
+                $baseParams + [ 'Filter' => [ 'ShowRepresentatives' => true, 'LanguageIds' => ['fr-BE', 'nl-BE', 'en-GB'] ] ],
+                $baseParams + [ 'filter' => [ 'ShowRepresentatives' => true, 'LanguageIds' => ['fr-BE', 'nl-BE', 'en-GB'] ] ],
+                $baseParams + [ 'Filter' => [ 'ShowRepresentatives' => true, 'languageIds' => ['fr-BE', 'nl-BE', 'en-GB'] ] ],
+                $baseParams + [ 'filter' => [ 'ShowRepresentatives' => true, 'languageIds' => ['fr-BE', 'nl-BE', 'en-GB'] ] ],
                 $baseParams + [ 'Filter' => [ 'ShowRepresentatives' => true ] ],
-                $baseParams + [ 'filter' => [ 'showRepresentatives' => true ] ],
+                $baseParams + [ 'filter' => [ 'ShowRepresentatives' => true ] ],
                 $baseParams + [ 'Filter' => [ 'showRepresentatives' => true ] ],
+                $baseParams + [ 'filter' => [ 'showRepresentatives' => true ] ],
                 $baseParams,
             ];
             $data = null;
@@ -524,7 +560,18 @@ class Whise_Sync_Manager {
                     $this->log('DEBUG - representatives in list for estate ' . ($property['id'] ?? 'n/a') . ' count: ' . (is_array($property['representatives']) ? count($property['representatives']) : 0));
                 }
                 
-                // Collecter l'ID Whise pour la vérification des biens obsolètes
+                // Exclure les biens avec des statuts non utiles
+                $purpose_status_id = $property['purposeStatus']['id'] ?? 0;
+                $excluded_status_ids = $this->get_excluded_status_ids();
+                
+                if (isset($excluded_status_ids[$purpose_status_id])) {
+                    $status_name = $excluded_status_ids[$purpose_status_id];
+                    $this->log('INFO - Bien ' . ($property['id'] ?? 'inconnu') . ' ignoré : statut "' . $status_name . '" (purpose_status_id=' . $purpose_status_id . ')');
+                    // Ne pas ajouter à whise_ids_from_api pour que le bien soit supprimé lors du nettoyage s'il existe déjà
+                    continue; // Passer au bien suivant
+                }
+                
+                // Collecter l'ID Whise pour la vérification des biens obsolètes (seulement pour les biens non retirés)
                 if (!empty($property['id'])) {
                     $whise_ids_from_api[] = (string)$property['id'];
                 }
@@ -712,30 +759,103 @@ class Whise_Sync_Manager {
         }
 
         // Traitement des descriptions
+        // Extraction des descriptions multilingues
         $short_description = '';
         $sms_description = '';
         $long_description = '';
+        
+        // Dictionnaires pour stocker toutes les langues
+        $short_descriptions = ['fr' => '', 'nl' => '', 'en' => ''];
+        $sms_descriptions = ['fr' => '', 'nl' => '', 'en' => ''];
+        $long_descriptions = ['fr' => '', 'nl' => '', 'en' => ''];
+        
+        // Structure multilingue pour compatibilité
+        $descriptions_multilingual = [
+            'shortDescription' => [],
+            'sms' => [],
+            'description' => []
+        ];
+        
+        // Extraction des descriptions courtes
         if (!empty($property['shortDescription'])) {
             foreach ($property['shortDescription'] as $desc) {
-                if ($desc['languageId'] === 'fr-BE') {
-                    $short_description = $desc['content'];
-                    break;
+                $lang_id = $desc['languageId'] ?? '';
+                $content = $desc['content'] ?? '';
+                
+                // Mapping des codes de langue
+                $lang_code = '';
+                if (strpos($lang_id, 'fr') !== false) {
+                    $lang_code = 'fr';
+                } elseif (strpos($lang_id, 'nl') !== false) {
+                    $lang_code = 'nl';
+                } elseif (strpos($lang_id, 'en') !== false) {
+                    $lang_code = 'en';
+                }
+                
+                if ($lang_code && !empty($content)) {
+                    $short_descriptions[$lang_code] = $content;
+                    $descriptions_multilingual['shortDescription'][$lang_id] = $content;
+                    
+                    // Garder fr-BE comme valeur par défaut pour rétrocompatibilité
+                    if ($lang_id === 'fr-BE') {
+                        $short_description = $content;
+                    }
                 }
             }
         }
+        
+        // Extraction des descriptions SMS
         if (!empty($property['sms'])) {
             foreach ($property['sms'] as $sms) {
-                if ($sms['languageId'] === 'fr-BE') {
-                    $sms_description = $sms['content'];
-                    break;
+                $lang_id = $sms['languageId'] ?? '';
+                $content = $sms['content'] ?? '';
+                
+                // Mapping des codes de langue
+                $lang_code = '';
+                if (strpos($lang_id, 'fr') !== false) {
+                    $lang_code = 'fr';
+                } elseif (strpos($lang_id, 'nl') !== false) {
+                    $lang_code = 'nl';
+                } elseif (strpos($lang_id, 'en') !== false) {
+                    $lang_code = 'en';
+                }
+                
+                if ($lang_code && !empty($content)) {
+                    $sms_descriptions[$lang_code] = $content;
+                    $descriptions_multilingual['sms'][$lang_id] = $content;
+                    
+                    // Garder fr-BE comme valeur par défaut pour rétrocompatibilité
+                    if ($lang_id === 'fr-BE') {
+                        $sms_description = $content;
+                    }
                 }
             }
         }
+        
+        // Extraction des descriptions longues
         if (!empty($property['description'])) {
             foreach ($property['description'] as $desc) {
-                if ($desc['languageId'] === 'fr-BE') {
-                    $long_description = $desc['content'];
-                    break;
+                $lang_id = $desc['languageId'] ?? '';
+                $content = $desc['content'] ?? '';
+                
+                // Mapping des codes de langue
+                $lang_code = '';
+                if (strpos($lang_id, 'fr') !== false) {
+                    $lang_code = 'fr';
+                } elseif (strpos($lang_id, 'nl') !== false) {
+                    $lang_code = 'nl';
+                } elseif (strpos($lang_id, 'en') !== false) {
+                    $lang_code = 'en';
+                }
+                
+                if ($lang_code && !empty($content)) {
+                    $long_descriptions[$lang_code] = $content;
+                    $descriptions_multilingual['description'][$lang_id] = $content;
+                    
+                    // Garder fr-BE comme valeur par défaut pour rétrocompatibilité
+                    if ($lang_id === 'fr-BE') {
+                        $long_description = $content;
+                    }
                 }
             }
         }
@@ -936,9 +1056,27 @@ class Whise_Sync_Manager {
             'client_name' => $property['client'] ?? '',
             'office_name' => $property['office'] ?? '',
             
-            // Descriptions
+            // Descriptions (FR par défaut pour rétrocompatibilité)
             'short_description' => $short_description,
             'sms_description' => $sms_description,
+            
+            // Descriptions multilingues - Short Description
+            'short_description_fr' => $short_descriptions['fr'],
+            'short_description_nl' => $short_descriptions['nl'],
+            'short_description_en' => $short_descriptions['en'],
+            
+            // Descriptions multilingues - SMS
+            'sms_description_fr' => $sms_descriptions['fr'],
+            'sms_description_nl' => $sms_descriptions['nl'],
+            'sms_description_en' => $sms_descriptions['en'],
+            
+            // Descriptions multilingues - Long Description
+            'description_fr' => $long_descriptions['fr'],
+            'description_nl' => $long_descriptions['nl'],
+            'description_en' => $long_descriptions['en'],
+            
+            // Structure multilingue complète (pour compatibilité avec get_description_by_language)
+            'descriptions_multilingual' => $descriptions_multilingual,
             
             // Images
             'images' => $images,
@@ -1619,6 +1757,26 @@ class Whise_Sync_Manager {
             if (empty($whise_id)) {
                 $this->log('WARN - Property ' . $property->ID . ' n\'a pas de whise_id, ignoré');
                 continue;
+            }
+
+            // Vérifier si le bien a un statut à exclure et le supprimer explicitement
+            $purpose_status_id = get_post_meta($property->ID, 'purpose_status_id', true);
+            $excluded_status_ids = $this->get_excluded_status_ids();
+            
+            if (isset($excluded_status_ids[$purpose_status_id])) {
+                $status_name = $excluded_status_ids[$purpose_status_id];
+                $this->log('INFO - Suppression du bien avec statut exclu "' . $status_name . '": ' . $property->post_title . ' (ID: ' . $property->ID . ', Whise ID: ' . $whise_id . ')');
+                
+                // Supprimer définitivement le bien et ses métadonnées
+                $deleted = wp_delete_post($property->ID, true);
+                
+                if ($deleted) {
+                    $deleted_count++;
+                    $this->log('SUCCESS - Bien avec statut exclu "' . $status_name . '" supprimé: ' . $property->post_title . ' (ID: ' . $property->ID . ')');
+                } else {
+                    $this->log('ERROR - Échec de suppression du bien avec statut exclu "' . $status_name . '": ' . $property->post_title . ' (ID: ' . $property->ID . ')');
+                }
+                continue; // Passer au bien suivant
             }
 
             // Vérifier si ce whise_id est encore présent dans l'API

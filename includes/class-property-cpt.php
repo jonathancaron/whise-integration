@@ -638,6 +638,14 @@ class Whise_Property_CPT {
             'representant' => [
                 'title' => 'Représentant',
                 'fields' => ['representative_id', 'representative_name', 'representative_email', 'representative_phone', 'representative_mobile', 'representative_function']
+            ],
+            'descriptions_multilingues' => [
+                'title' => 'Descriptions multilingues',
+                'fields' => [
+                    'short_description_fr', 'short_description_nl', 'short_description_en',
+                    'sms_description_fr', 'sms_description_nl', 'sms_description_en',
+                    'description_fr', 'description_nl', 'description_en'
+                ]
             ]
         ];
 
@@ -676,8 +684,18 @@ class Whise_Property_CPT {
                      . $field_label_with_key . '</div>';
                 echo '<div class="whise-field-value">';
                 
+                // Formatage spécial pour les descriptions (respecter les sauts de ligne)
+                if (strpos($field, 'description') !== false || strpos($field, 'sms') !== false) {
+                    if (!empty($value)) {
+                        echo '<div style="white-space: pre-wrap; max-height: 300px; overflow-y: auto; padding: 8px; background: #f5f5f5; border-radius: 4px;">';
+                        echo esc_html($value);
+                        echo '</div>';
+                    } else {
+                        echo '—';
+                    }
+                }
                 // Formatage spécial pour les booléens
-                if (is_bool($value) || in_array($field, ['parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished', 'air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central', 'electricity', 'oil_tank', 'insulation', 'toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment', 'is_immediately_available'])) {
+                elseif (is_bool($value) || in_array($field, ['parking', 'garage', 'terrace', 'garden', 'swimming_pool', 'elevator', 'cellar', 'attic', 'furnished', 'air_conditioning', 'double_glazing', 'alarm', 'concierge', 'telephone', 'telephone_central', 'electricity', 'oil_tank', 'insulation', 'toilets_mf', 'vta_regime', 'building_permit', 'subdivision_permit', 'ongoing_judgment', 'is_immediately_available'])) {
                     $is_true = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                     echo '<span class="whise-boolean-' . ($is_true ? 'true' : 'false') . '">';
                     echo $is_true ? '✓ Oui' : '✗ Non';

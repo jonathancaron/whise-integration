@@ -217,6 +217,15 @@ class Whise_Property_Details_Page {
                 'fields' => ['description', 'short_description', 'sms_description'],
                 'icon' => 'dashicons-editor-alignleft'
             ],
+            'descriptions_multilingues' => [
+                'title' => 'Descriptions multilingues',
+                'fields' => [
+                    'short_description_fr', 'short_description_nl', 'short_description_en',
+                    'sms_description_fr', 'sms_description_nl', 'sms_description_en',
+                    'description_fr', 'description_nl', 'description_en'
+                ],
+                'icon' => 'dashicons-translation'
+            ],
             'media_liens' => [
                 'title' => 'Médias et liens',
                 'fields' => ['link_3d_model', 'link_virtual_visit', 'link_video'],
