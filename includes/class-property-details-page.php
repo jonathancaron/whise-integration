@@ -372,26 +372,38 @@ class Whise_Property_Details_Page {
         $gallery_ids = get_post_meta($post_id, '_whise_gallery_images', true);
         
         if (!empty($gallery_ids) && is_array($gallery_ids)) {
+            // Trier les images par ordre avant de les afficher
+            $gallery_with_orders = [];
+            foreach ($gallery_ids as $attachment_id) {
+                if (wp_attachment_is_image($attachment_id)) {
+                    $order = get_post_meta($attachment_id, '_whise_image_order', true);
+                    $order = $order !== '' ? (int)$order : 999;
+                    $gallery_with_orders[] = ['id' => $attachment_id, 'order' => $order];
+                }
+            }
+            usort($gallery_with_orders, function($a, $b) {
+                return $a['order'] <=> $b['order'];
+            });
+            
             echo '<div class="whise-gallery-container">';
             echo '<div class="whise-gallery-grid">';
             
-            foreach ($gallery_ids as $attachment_id) {
-                if (wp_attachment_is_image($attachment_id)) {
-                    $image_data = wp_get_attachment_metadata($attachment_id);
-                    $image_url = wp_get_attachment_url($attachment_id);
-                    $thumbnail_url = wp_get_attachment_image_url($attachment_id, 'medium');
-                    $title = get_the_title($attachment_id);
-                    $whise_order = get_post_meta($attachment_id, '_whise_image_order', true);
-                    
-                    echo '<div class="whise-gallery-item" data-order="' . esc_attr($whise_order) . '">';
-                    echo '<a href="' . esc_url($image_url) . '" class="whise-gallery-link" data-lightbox="property-gallery" data-title="' . esc_attr($title) . '">';
-                    echo '<img src="' . esc_url($thumbnail_url) . '" alt="' . esc_attr($title) . '" class="whise-gallery-thumbnail">';
-                    echo '<div class="whise-gallery-overlay">';
-                    echo '<span class="whise-gallery-icon">🔍</span>';
-                    echo '</div>';
-                    echo '</a>';
-                    echo '</div>';
-                }
+            foreach ($gallery_with_orders as $item) {
+                $attachment_id = $item['id'];
+                $image_data = wp_get_attachment_metadata($attachment_id);
+                $image_url = wp_get_attachment_url($attachment_id);
+                $thumbnail_url = wp_get_attachment_image_url($attachment_id, 'medium');
+                $title = get_the_title($attachment_id);
+                $whise_order = $item['order'];
+                
+                echo '<div class="whise-gallery-item" data-order="' . esc_attr($whise_order) . '">';
+                echo '<a href="' . esc_url($image_url) . '" class="whise-gallery-link" data-lightbox="property-gallery" data-title="' . esc_attr($title) . '">';
+                echo '<img src="' . esc_url($thumbnail_url) . '" alt="' . esc_attr($title) . '" class="whise-gallery-thumbnail">';
+                echo '<div class="whise-gallery-overlay">';
+                echo '<span class="whise-gallery-icon">🔍</span>';
+                echo '</div>';
+                echo '</a>';
+                echo '</div>';
             }
             
             echo '</div>';

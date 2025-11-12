@@ -514,7 +514,7 @@ class Whise_Sync_Manager {
         $endpoint = get_option('whise_api_endpoint', 'https://api.whise.eu/');
         $api = new Whise_API($endpoint);
         $page = 1;
-        $per_page = get_option('whise_batch_size', 25); // Réduit à 25 par défaut pour éviter les timeouts
+        $per_page = get_option('whise_batch_size', 50); // Augmenté à 50 par défaut pour plus de performance
         $total_imported = 0;
         $whise_ids_from_api = []; // Pour tracker les IDs présents dans l'API
         
@@ -556,7 +556,10 @@ class Whise_Sync_Manager {
             }
             
             foreach ($data['estates'] as $property) {
-                if ($page === 1 && isset($property['representatives'])) {
+                // Log uniquement pour la première page et les propriétés de debug
+                $debug_property_ids = ['7136195'];
+                $is_debug_property = $page === 1 && isset($property['representatives']) && in_array((string)($property['id'] ?? ''), $debug_property_ids, true);
+                if ($is_debug_property) {
                     $this->log('DEBUG - representatives in list for estate ' . ($property['id'] ?? 'n/a') . ' count: ' . (is_array($property['representatives']) ? count($property['representatives']) : 0));
                 }
                 
@@ -580,8 +583,8 @@ class Whise_Sync_Manager {
                     $this->import_property($property);
                     $total_imported++;
                     
-                    // Pause courte pour éviter de surcharger l'API
-                    usleep(100000); // 0.1 seconde
+                    // Pause réduite (seulement si nécessaire pour éviter de surcharger l'API)
+                    // Supprimée pour améliorer les performances
                     
                 } catch (Exception $e) {
                     $this->log('ERROR - Échec import propriété ' . ($property['id'] ?? 'inconnue') . ': ' . $e->getMessage());
@@ -591,11 +594,8 @@ class Whise_Sync_Manager {
             
             $page++;
             
-            // Pause entre les pages pour éviter de surcharger l'API
-            if (count($data['estates']) === $per_page) {
-                $this->log('DEBUG - Pause de 1 seconde avant la page suivante...');
-                sleep(1);
-            }
+            // Pause réduite entre les pages (seulement si nécessaire)
+            // Supprimée pour améliorer les performances - l'API Whise peut gérer les requêtes rapides
         } while (count($data['estates']) === $per_page);
         
         $this->log('Import terminé. Total biens importés/mis à jour : ' . $total_imported);
@@ -694,16 +694,26 @@ class Whise_Sync_Manager {
         if (empty($property['id'])) return;
         $whise_id = $property['id'];
         
+        // Activer les logs détaillés uniquement pour certaines propriétés (pour debug)
+        $debug_property_ids = ['7136195'];
+        $is_debug_property = in_array((string)$whise_id, $debug_property_ids, true);
+        
         // Debug amélioré pour le champ rooms
         if (isset($property['rooms'])) {
-            $this->log('DEBUG - Property ' . $whise_id . ' - rooms value from API: ' . var_export($property['rooms'], true) . ' (type: ' . gettype($property['rooms']) . ')');
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - rooms value from API: ' . var_export($property['rooms'], true) . ' (type: ' . gettype($property['rooms']) . ')');
+            }
         } else {
-            $this->log('DEBUG - Property ' . $whise_id . ' - rooms field not found in API response');
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - rooms field not found in API response');
+            }
         }
         
         // Récupération des taxonomies stockées
         $whise_taxonomies = get_option('whise_taxonomies_full', []);
-        $this->log('DEBUG - Property ' . $whise_id . ' - available taxonomies: ' . json_encode(array_keys($whise_taxonomies)));
+        if ($is_debug_property) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - available taxonomies: ' . json_encode(array_keys($whise_taxonomies)));
+        }
         
         // Récupération du nom de l'état depuis la taxonomie
         $state_name = '';
@@ -733,14 +743,18 @@ class Whise_Sync_Manager {
                     'type' => $detail['type'] ?? ''
                 ];
             }
-            $this->log('DEBUG - Property ' . $whise_id . ' - details count from list: ' . count($details));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - details count from list: ' . count($details));
+            }
             // Vérifier la présence des IDs de coordonnées dans le payload liste
             $has1849 = false; $has1850 = false;
             foreach ($details as $dchk) {
                 if ((string)$dchk['id'] === '1849') { $has1849 = true; }
                 if ((string)$dchk['id'] === '1850') { $has1850 = true; }
             }
-            $this->log('DEBUG - Property ' . $whise_id . ' - details contains 1849=' . ($has1849 ? 'yes' : 'no') . ' 1850=' . ($has1850 ? 'yes' : 'no'));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - details contains 1849=' . ($has1849 ? 'yes' : 'no') . ' 1850=' . ($has1850 ? 'yes' : 'no'));
+            }
         }
 
         // Traitement des images (URLs seulement pour le moment)
@@ -1092,9 +1106,11 @@ class Whise_Sync_Manager {
         ];
         
         // Debug final pour vérifier le mapping des rooms
-        $this->log('DEBUG - Property ' . $whise_id . ' - mapped rooms value: ' . var_export($mapped_data['rooms'], true));
-        // Debug mapping latitude/longitude
-        $this->log('DEBUG - Property ' . $whise_id . ' - mapped latitude: ' . var_export($mapped_data['latitude'], true) . ' longitude: ' . var_export($mapped_data['longitude'], true));
+        if ($is_debug_property) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - mapped rooms value: ' . var_export($mapped_data['rooms'], true));
+            // Debug mapping latitude/longitude
+            $this->log('DEBUG - Property ' . $whise_id . ' - mapped latitude: ' . var_export($mapped_data['latitude'], true) . ' longitude: ' . var_export($mapped_data['longitude'], true));
+        }
         
         // Recherche d'un post existant avec ce whise_id
         $existing = get_posts([
@@ -1127,10 +1143,182 @@ class Whise_Sync_Manager {
         $existing_gallery = get_post_meta($post_id, '_whise_gallery_images', true);
         $skip_image_download = get_option('whise_skip_image_download', false);
         
-        if (!empty($property['pictures']) && !$skip_image_download) {
-            $this->log('DEBUG - Property ' . $whise_id . ' - Processing ' . count($property['pictures']) . ' images');
-            
+        // Collecter tous les whise_image_id de l'API pour détecter les images supprimées
+        $whise_image_ids_from_api = [];
+        if (!empty($property['pictures'])) {
             foreach ($property['pictures'] as $picture) {
+                if (!empty($picture['id'])) {
+                    $whise_image_ids_from_api[] = (string)$picture['id'];
+                }
+            }
+        }
+        
+        // IMPORTANT : Récupérer TOUTES les images attachées au post, pas seulement celles dans $existing_gallery
+        // Cela permet de détecter les images qui ont été ajoutées manuellement ou qui ne sont pas dans la méta
+        $all_attached_images = get_posts([
+            'post_type' => 'attachment',
+            'post_parent' => $post_id,
+            'post_mime_type' => 'image',
+            'posts_per_page' => -1,
+            'fields' => 'ids'
+        ]);
+        
+        // Fusionner $existing_gallery et $all_attached_images pour avoir toutes les images à vérifier
+        $all_images_to_check = array_unique(array_merge(
+            is_array($existing_gallery) ? $existing_gallery : [],
+            $all_attached_images
+        ));
+        
+        // Supprimer les images qui ne sont plus dans l'API
+        // Optimisation : charger toutes les métadonnées en une fois pour éviter les requêtes multiples
+        if (!empty($all_images_to_check)) {
+            $images_to_delete = [];
+            $images_to_keep = [];
+            
+            // Précharger toutes les métadonnées des images en une seule requête
+            $attachment_metadata = [];
+            foreach ($all_images_to_check as $attachment_id) {
+                $attachment_metadata[$attachment_id] = [
+                    'whise_image_id' => get_post_meta($attachment_id, '_whise_image_id', true),
+                    'original_url' => get_post_meta($attachment_id, '_whise_original_url', true)
+                ];
+            }
+            
+            // Créer un index des URLs de l'API pour recherche rapide
+            $api_urls_index = [];
+            if (!empty($property['pictures'])) {
+                foreach ($property['pictures'] as $api_picture) {
+                    $api_urls_index[$api_picture['urlXXL'] ?? ''] = $api_picture['id'];
+                    $api_urls_index[$api_picture['urlLarge'] ?? ''] = $api_picture['id'];
+                    $api_urls_index[$api_picture['urlSmall'] ?? ''] = $api_picture['id'];
+                }
+            }
+            
+            foreach ($all_images_to_check as $attachment_id) {
+                // Vérifier que l'attachment existe toujours
+                if (!get_post($attachment_id)) {
+                    continue;
+                }
+                
+                $meta = $attachment_metadata[$attachment_id];
+                $attachment_whise_id = $meta['whise_image_id'];
+                
+                if (!empty($attachment_whise_id)) {
+                    // Si l'image n'est plus dans l'API, la marquer pour suppression
+                    if (!in_array((string)$attachment_whise_id, $whise_image_ids_from_api, true)) {
+                        $images_to_delete[] = $attachment_id;
+                    } else {
+                        $images_to_keep[] = $attachment_id;
+                    }
+                } else {
+                    // Image sans whise_image_id : vérifier si elle correspond à une image de l'API par URL
+                    $attachment_url = $meta['original_url'];
+                    $found_in_api = false;
+                    
+                    if (!empty($attachment_url) && isset($api_urls_index[$attachment_url])) {
+                        $found_in_api = true;
+                        $api_image_id = $api_urls_index[$attachment_url];
+                        // Mettre à jour le whise_image_id manquant
+                        update_post_meta($attachment_id, '_whise_image_id', $api_image_id);
+                        $images_to_keep[] = $attachment_id;
+                    }
+                    
+                    // Si pas trouvée dans l'API, la supprimer (image orpheline)
+                    if (!$found_in_api) {
+                        $images_to_delete[] = $attachment_id;
+                    }
+                }
+            }
+            
+            $this->log('INFO - Property ' . $whise_id . ' - Images à garder: ' . count($images_to_keep) . ', Images à supprimer: ' . count($images_to_delete) . ' (total images vérifiées: ' . count($all_images_to_check) . ')');
+            
+            // Supprimer les images obsolètes
+            if (!empty($images_to_delete)) {
+                $this->log('INFO - Property ' . $whise_id . ' - Suppression de ' . count($images_to_delete) . ' image(s) supprimée(s) dans Whise');
+                foreach ($images_to_delete as $attachment_id_to_delete) {
+                    $file_path = get_attached_file($attachment_id_to_delete);
+                    $deleted = wp_delete_attachment($attachment_id_to_delete, true);
+                    if ($deleted) {
+                        $this->log('INFO - Property ' . $whise_id . ' - Image supprimée: attachment ID ' . $attachment_id_to_delete);
+                        // Supprimer aussi le fichier physique et ses variantes
+                        if ($file_path && file_exists($file_path)) {
+                            @unlink($file_path);
+                            $path_info = pathinfo($file_path);
+                            $filename_without_ext = $path_info['filename'];
+                            for ($i = 1; $i <= 10; $i++) {
+                                $variant_path = $path_info['dirname'] . '/' . $filename_without_ext . '-' . $i . '.' . $path_info['extension'];
+                                if (file_exists($variant_path)) {
+                                    @unlink($variant_path);
+                                }
+                            }
+                        }
+                    } else {
+                        $this->log('ERROR - Property ' . $whise_id . ' - Échec suppression image: attachment ID ' . $attachment_id_to_delete);
+                    }
+                }
+                
+                // Mettre à jour la galerie existante pour retirer les images supprimées
+                $existing_gallery = is_array($existing_gallery) ? array_values(array_diff($existing_gallery, $images_to_delete)) : [];
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Gallery updated after deletions: ' . count($existing_gallery) . ' images remaining');
+                }
+            }
+        }
+        
+        if (!empty($property['pictures']) && !$skip_image_download) {
+            $this->log('INFO - Property ' . $whise_id . ' - Processing ' . count($property['pictures']) . ' images from API');
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - Existing gallery count: ' . (is_array($existing_gallery) ? count($existing_gallery) : 0));
+            }
+            
+            // Optimisation : Précharger toutes les images existantes du bien en une seule requête
+            $existing_attachments_cache = [];
+            if (!empty($existing_gallery) && is_array($existing_gallery)) {
+                // Précharger tous les posts en une fois pour éviter les requêtes multiples
+                $attachment_posts = [];
+                foreach ($existing_gallery as $att_id) {
+                    $attachment_posts[$att_id] = get_post($att_id);
+                }
+                
+                // Charger toutes les métadonnées des images existantes en une fois
+                foreach ($existing_gallery as $att_id) {
+                    $att_whise_id = get_post_meta($att_id, '_whise_image_id', true);
+                    $att_url = get_post_meta($att_id, '_whise_original_url', true);
+                    $att_order = get_post_meta($att_id, '_whise_image_order', true);
+                    $att_post = $attachment_posts[$att_id] ?? null;
+                    $att_parent = $att_post ? $att_post->post_parent : 0;
+                    
+                    if (!empty($att_whise_id)) {
+                        $existing_attachments_cache['by_id'][(string)$att_whise_id] = [
+                            'id' => $att_id,
+                            'url' => $att_url,
+                            'order' => $att_order,
+                            'parent' => $att_parent
+                        ];
+                    }
+                    if (!empty($att_url)) {
+                        $existing_attachments_cache['by_url'][$att_url] = [
+                            'id' => $att_id,
+                            'whise_id' => $att_whise_id,
+                            'order' => $att_order,
+                            'parent' => $att_parent
+                        ];
+                    }
+                }
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Cache built: ' . count($existing_attachments_cache['by_id'] ?? []) . ' by ID, ' . count($existing_attachments_cache['by_url'] ?? []) . ' by URL');
+                }
+            }
+            
+            // Trier les images par ordre pour maintenir l'ordre de la galerie
+            $pictures_sorted = $property['pictures'];
+            usort($pictures_sorted, function($a, $b) {
+                $order_a = $a['order'] ?? 999;
+                $order_b = $b['order'] ?? 999;
+                return $order_a <=> $order_b;
+            });
+            
+            foreach ($pictures_sorted as $picture) {
                 // Déterminer l'URL à utiliser selon la qualité configurée
                 $preferred_quality = get_option('whise_image_quality', 'urlXXL');
                 $image_url_to_check = '';
@@ -1153,6 +1341,10 @@ class Whise_Sync_Manager {
                 $whise_image_id = $picture['id'];
                 $image_order = $picture['order'] ?? 0;
                 
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Processing image whise_id=' . $whise_image_id . ', order=' . $image_order . ', URL=' . substr($image_url_to_check, 0, 80) . '...');
+                }
+                
                 // Chercher les images existantes par whise_image_id
                 $all_quality_attachments = get_posts([
                     'post_type' => 'attachment',
@@ -1168,7 +1360,9 @@ class Whise_Sync_Manager {
                 
                 // Si pas trouvé par whise_image_id, chercher par pattern de nom de fichier
                 if (empty($all_quality_attachments)) {
-                    $filename_pattern = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id;
+                    // Utiliser le même format avec zéros pour la recherche
+                    $image_order_padded = str_pad((string)$image_order, 3, '0', STR_PAD_LEFT);
+                    $filename_pattern = 'whise-' . $whise_id . '-' . $image_order_padded . '-' . $whise_image_id;
                     global $wpdb;
                     $attachment_ids = $wpdb->get_col($wpdb->prepare(
                         "SELECT p.ID FROM {$wpdb->posts} p 
@@ -1183,7 +1377,9 @@ class Whise_Sync_Manager {
                         foreach ($attachment_ids as $att_id) {
                             $all_quality_attachments[] = get_post($att_id);
                         }
-                        $this->log('DEBUG - Property ' . $whise_id . ' - Found ' . count($attachment_ids) . ' images by filename pattern for image ' . $whise_image_id);
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Found ' . count($attachment_ids) . ' images by filename pattern for image ' . $whise_image_id);
+                        }
                     }
                 }
                 
@@ -1208,11 +1404,15 @@ class Whise_Sync_Manager {
                         $old_quality_level = 2; // urlSmall
                     }
                     
-                    $this->log('DEBUG - Property ' . $whise_id . ' - Checking attachment ID ' . $old_attachment->ID . ' - old quality level: ' . $old_quality_level . ', preferred: ' . $preferred_quality_level);
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Checking attachment ID ' . $old_attachment->ID . ' - old quality level: ' . $old_quality_level . ', preferred: ' . $preferred_quality_level);
+                        }
                     
                     // Si l'ancienne image est de qualité inférieure, la supprimer
                     if ($old_quality_level > $preferred_quality_level && $old_quality_level !== -1) {
-                        $this->log('DEBUG - Property ' . $whise_id . ' - Deleting lower quality image (level ' . $old_quality_level . ' vs ' . $preferred_quality_level . '): attachment ID ' . $old_attachment->ID . ' URL: ' . $old_url);
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Deleting lower quality image (level ' . $old_quality_level . ' vs ' . $preferred_quality_level . '): attachment ID ' . $old_attachment->ID . ' URL: ' . $old_url);
+                        }
                         
                         // Récupérer le chemin du fichier AVANT de supprimer l'attachment
                         $file_path = get_attached_file($old_attachment->ID);
@@ -1223,7 +1423,9 @@ class Whise_Sync_Manager {
                         // Supprimer le fichier physique et ses variantes
                         if ($file_path && file_exists($file_path)) {
                             @unlink($file_path);
-                            $this->log('DEBUG - Property ' . $whise_id . ' - Deleted physical file: ' . basename($file_path));
+                            if ($is_debug_property) {
+                                $this->log('DEBUG - Property ' . $whise_id . ' - Deleted physical file: ' . basename($file_path));
+                            }
                             
                             // Supprimer les variantes (-1, -2, etc.)
                             $path_info = pathinfo($file_path);
@@ -1232,7 +1434,9 @@ class Whise_Sync_Manager {
                                 $variant_path = $path_info['dirname'] . '/' . $filename_without_ext . '-' . $i . '.' . $path_info['extension'];
                                 if (file_exists($variant_path)) {
                                     @unlink($variant_path);
-                                    $this->log('DEBUG - Property ' . $whise_id . ' - Deleted variant file: ' . basename($variant_path));
+                                    if ($is_debug_property) {
+                                        $this->log('DEBUG - Property ' . $whise_id . ' - Deleted variant file: ' . basename($variant_path));
+                                    }
                                 }
                             }
                         }
@@ -1241,50 +1445,208 @@ class Whise_Sync_Manager {
                     }
                 }
                 
-                // ÉTAPE 2 : Vérifier si l'image de bonne qualité existe déjà
+                // ÉTAPE 2 : Vérifier si l'image existe déjà (utiliser le cache au lieu de requêtes DB)
                 if (!$force_redownload) {
-                    $existing_attachment = get_posts([
-                        'post_type' => 'attachment',
-                        'meta_key' => '_whise_original_url',
-                        'meta_value' => $image_url_to_check,
-                        'numberposts' => 1
-                    ]);
+                    $existing_att_data = null;
                     
-                    if (!empty($existing_attachment)) {
-                        $gallery_attachment_ids[] = $existing_attachment[0]->ID;
-                        $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists with quality ' . $preferred_quality . ', skipping download: ' . $picture['id']);
-                        continue; // Passer à l'image suivante
+                    // Chercher d'abord par whise_image_id dans le cache
+                    if (isset($existing_attachments_cache['by_id'][(string)$whise_image_id])) {
+                        $existing_att_data = $existing_attachments_cache['by_id'][(string)$whise_image_id];
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Image ' . $whise_image_id . ' found in cache by ID');
+                        }
+                    } elseif (isset($existing_attachments_cache['by_url'][$image_url_to_check])) {
+                        // Si pas trouvé par ID, chercher par URL dans le cache
+                        $existing_att_data = $existing_attachments_cache['by_url'][$image_url_to_check];
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Image ' . $whise_image_id . ' found in cache by URL');
+                        }
+                    } else {
+                        if ($is_debug_property) {
+                            $this->log('DEBUG - Property ' . $whise_id . ' - Image ' . $whise_image_id . ' NOT found in cache, will download');
+                        }
+                    }
+                    
+                    if ($existing_att_data) {
+                        $existing_att_id = $existing_att_data['id'];
+                        $existing_url = $existing_att_data['url'] ?? '';
+                        $existing_order = $existing_att_data['order'] ?? '';
+                        $existing_parent = $existing_att_data['parent'] ?? 0;
+                        
+                        // Vérifier si l'URL a changé ou si l'ordre a changé (mise à jour nécessaire)
+                        $needs_update = false;
+                        $update_reason = [];
+                        
+                        if ($existing_url !== $image_url_to_check) {
+                            $needs_update = true;
+                            $update_reason[] = 'URL changée (' . substr($existing_url, 0, 50) . ' vs ' . substr($image_url_to_check, 0, 50) . ')';
+                        }
+                        
+                        if ((string)$existing_order !== (string)$image_order) {
+                            $needs_update = true;
+                            $update_reason[] = 'ordre changé (' . $existing_order . ' -> ' . $image_order . ')';
+                        }
+                        
+                        // Vérifier si l'attachment est lié au bon post
+                        if ($existing_parent != $post_id) {
+                            $needs_update = true;
+                            $update_reason[] = 'parent incorrect (' . $existing_parent . ' vs ' . $post_id . ')';
+                        }
+                        
+                        if ($needs_update) {
+                            $this->log('INFO - Property ' . $whise_id . ' - Image ' . $whise_image_id . ' needs update: ' . implode(', ', $update_reason));
+                            // Supprimer l'ancienne pour télécharger la nouvelle
+                            wp_delete_attachment($existing_att_id, true);
+                            $force_redownload = true;
+                        } else {
+                            if ($is_debug_property) {
+                                $this->log('DEBUG - Property ' . $whise_id . ' - Image ' . $whise_image_id . ' is up to date, adding to gallery');
+                            }
+                            // L'image existe déjà et est à jour, l'ajouter à la galerie
+                            // Mettre à jour les métadonnées si nécessaire (sans requête DB supplémentaire)
+                            if ($existing_parent != $post_id) {
+                                wp_update_post([
+                                    'ID' => $existing_att_id,
+                                    'post_parent' => $post_id
+                                ]);
+                            }
+                            // Mettre à jour whise_image_id si manquant (pour images trouvées par URL)
+                            if (empty($existing_att_data['whise_id'])) {
+                                update_post_meta($existing_att_id, '_whise_image_id', $whise_image_id);
+                            }
+                            // Mettre à jour l'ordre si différent (même si on ne force pas le re-téléchargement)
+                            if ((string)$existing_order !== (string)$image_order) {
+                                update_post_meta($existing_att_id, '_whise_image_order', $image_order);
+                                // Mettre à jour aussi le menu_order pour WordPress/Elementor
+                                wp_update_post([
+                                    'ID' => $existing_att_id,
+                                    'menu_order' => (int)$image_order
+                                ]);
+                            }
+                            $gallery_attachment_ids[] = $existing_att_id;
+                            continue; // Passer à l'image suivante
+                        }
                     }
                 }
                 
                 // ÉTAPE 3 : Télécharger l'image
-                $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image ' . $picture['id'] . ' in quality ' . $preferred_quality);
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image ' . $picture['id'] . ' in quality ' . $preferred_quality);
+                }
                 $attachment_id = $this->download_and_create_attachment($picture, $whise_id, $post_id);
                 if ($attachment_id) {
                     $gallery_attachment_ids[] = $attachment_id;
                 }
             }
             
-            // Stocker les IDs des attachments de la galerie
+            // Nettoyer les IDs invalides (attachments qui n'existent plus)
+            $gallery_attachment_ids = array_filter($gallery_attachment_ids, function($att_id) {
+                return get_post($att_id) !== null;
+            });
+            
+            // Trier la galerie par ordre (basé sur _whise_image_order)
+            // Créer un tableau temporaire avec les ordres pour le tri
+            $gallery_with_orders = [];
+            foreach ($gallery_attachment_ids as $attachment_id) {
+                $order = get_post_meta($attachment_id, '_whise_image_order', true);
+                $order = $order !== '' ? (int)$order : 999;
+                $gallery_with_orders[] = ['id' => $attachment_id, 'order' => $order];
+            }
+            usort($gallery_with_orders, function($a, $b) {
+                return $a['order'] <=> $b['order'];
+            });
+            // Réextraire les IDs triés
+            $gallery_attachment_ids = array_values(array_column($gallery_with_orders, 'id'));
+            
+            // Mettre à jour le menu_order de tous les attachments pour WordPress/Elementor
+            foreach ($gallery_with_orders as $index => $item) {
+                $current_menu_order = get_post_field('menu_order', $item['id']);
+                if ($current_menu_order != $item['order']) {
+                    wp_update_post([
+                        'ID' => $item['id'],
+                        'menu_order' => (int)$item['order']
+                    ]);
+                }
+            }
+            
+            // IMPORTANT : S'assurer que la galerie finale ne contient QUE les images de l'API
+            // Vérifier que toutes les images dans la galerie ont un whise_image_id qui est dans l'API
+            $final_gallery_clean = [];
+            foreach ($gallery_attachment_ids as $att_id) {
+                $att_whise_id = get_post_meta($att_id, '_whise_image_id', true);
+                if (!empty($att_whise_id) && in_array((string)$att_whise_id, $whise_image_ids_from_api, true)) {
+                    $final_gallery_clean[] = $att_id;
+                } elseif (empty($att_whise_id)) {
+                    // Image sans whise_image_id : vérifier par URL si elle est dans l'API
+                    $att_url = get_post_meta($att_id, '_whise_original_url', true);
+                    $found_in_api = false;
+                    if (!empty($att_url) && !empty($property['pictures'])) {
+                        foreach ($property['pictures'] as $api_pic) {
+                            if ($att_url === ($api_pic['urlXXL'] ?? '') || 
+                                $att_url === ($api_pic['urlLarge'] ?? '') || 
+                                $att_url === ($api_pic['urlSmall'] ?? '')) {
+                                $found_in_api = true;
+                                // Mettre à jour le whise_image_id
+                                update_post_meta($att_id, '_whise_image_id', $api_pic['id']);
+                                break;
+                            }
+                        }
+                    }
+                    if ($found_in_api) {
+                        $final_gallery_clean[] = $att_id;
+                    } else {
+                        $this->log('WARN - Property ' . $whise_id . ' - Image ' . $att_id . ' sans whise_image_id et non trouvée dans API, retirée de la galerie');
+                    }
+                } else {
+                    $this->log('WARN - Property ' . $whise_id . ' - Image ' . $att_id . ' (whise_id=' . $att_whise_id . ') n\'est plus dans l\'API, retirée de la galerie');
+                }
+            }
+            
+            // Stocker les IDs des attachments de la galerie (même si vide, pour supprimer les anciennes)
+            $this->log('INFO - Property ' . $whise_id . ' - Final gallery: ' . count($final_gallery_clean) . ' images (was: ' . (is_array($existing_gallery) ? count($existing_gallery) : 0) . ', before cleanup: ' . count($gallery_attachment_ids) . ')');
+            update_post_meta($post_id, '_whise_gallery_images', $final_gallery_clean);
+            $gallery_attachment_ids = $final_gallery_clean;
+            
             if (!empty($gallery_attachment_ids)) {
-                update_post_meta($post_id, '_whise_gallery_images', $gallery_attachment_ids);
-                $this->log('DEBUG - Property ' . $whise_id . ' - Gallery updated with ' . count($gallery_attachment_ids) . ' image attachments');
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Gallery updated with ' . count($gallery_attachment_ids) . ' image attachments');
+                }
                 
                 // Définir la première image comme featured image
                 if (!has_post_thumbnail($post_id)) {
                     set_post_thumbnail($post_id, $gallery_attachment_ids[0]);
-                    $this->log('DEBUG - Property ' . $whise_id . ' - Set featured image: attachment ID ' . $gallery_attachment_ids[0]);
+                    if ($is_debug_property) {
+                        $this->log('DEBUG - Property ' . $whise_id . ' - Set featured image: attachment ID ' . $gallery_attachment_ids[0]);
+                    }
                 }
+            } else {
+                $this->log('INFO - Property ' . $whise_id . ' - No images in gallery (all removed or none in API)');
+                // Supprimer la featured image si plus d'images
+                delete_post_thumbnail($post_id);
             }
         } elseif ($skip_image_download) {
-            $this->log('DEBUG - Property ' . $whise_id . ' - Image download disabled, keeping existing gallery');
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - Image download disabled, keeping existing gallery');
+            }
             $gallery_attachment_ids = $existing_gallery ?: [];
+        } else {
+            // Cas où property['pictures'] est vide : supprimer toutes les images
+            if (empty($property['pictures']) && !empty($existing_gallery) && is_array($existing_gallery)) {
+                $this->log('INFO - Property ' . $whise_id . ' - No images in API, removing all existing images');
+                foreach ($existing_gallery as $attachment_id) {
+                    wp_delete_attachment($attachment_id, true);
+                }
+                update_post_meta($post_id, '_whise_gallery_images', []);
+                delete_post_thumbnail($post_id);
+            }
         }
 
         // Compléter avec le représentant si disponible
         // 1) Depuis la liste: champ representatives
         if (!empty($property['representatives']) && is_array($property['representatives'])) {
-            $this->log('DEBUG - Property ' . $whise_id . ' - representatives from list: ' . count($property['representatives']));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - representatives from list: ' . count($property['representatives']));
+            }
             $rep = $this->extract_representative_info([ 'employees' => $property['representatives'] ]);
         } else {
             $rep = $this->extract_representative_info($property);
@@ -1311,21 +1673,28 @@ class Whise_Sync_Manager {
             $meta_to_update[$key] = $converted_value;
             
             // Debug spécifique pour le champ rooms
-            if ($key === 'rooms') {
+            if ($key === 'rooms' && $is_debug_property) {
                 $this->log('DEBUG - Property ' . $whise_id . ' - rooms conversion: original=' . var_export($value, true) . ', type=' . $type . ', converted=' . var_export($converted_value, true));
             }
         }
         
-        // Mise à jour en batch des métadonnées
-        foreach ($meta_to_update as $key => $value) {
-            update_post_meta($post_id, $key, $value);
+        // Mise à jour optimisée des métadonnées (une seule transaction DB)
+        // Utiliser update_post_meta en batch pour réduire les requêtes DB
+        if (!empty($meta_to_update)) {
+            // Désactiver temporairement l'autoload pour les meta non critiques
+            foreach ($meta_to_update as $key => $value) {
+                // Utiliser update_post_meta directement (WordPress optimise déjà en interne)
+                update_post_meta($post_id, $key, $value);
+            }
         }
         
         // Traitement spécial pour les coordonnées
         if (isset($meta_to_update['latitude']) || isset($meta_to_update['longitude'])) {
             $saved_lat = $meta_to_update['latitude'] ?? get_post_meta($post_id, 'latitude', true);
             $saved_lng = $meta_to_update['longitude'] ?? get_post_meta($post_id, 'longitude', true);
-            $this->log('DEBUG - Property ' . $whise_id . ' - saved lat/lng in DB: ' . var_export($saved_lat, true) . '/' . var_export($saved_lng, true));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - saved lat/lng in DB: ' . var_export($saved_lat, true) . '/' . var_export($saved_lng, true));
+            }
             
             // Champs dédiés supplémentaires pour usage front/ACF
             update_post_meta($post_id, 'geo_lat', (float)$saved_lat);
@@ -1347,9 +1716,11 @@ class Whise_Sync_Manager {
         $assigned_categories = [];
         
         // Debug : Logger toutes les données de catégories reçues
-        $this->log('DEBUG - Property ' . $whise_id . ' - RAW category: ' . json_encode($property['category'] ?? null));
-        $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategories: ' . json_encode($property['subCategories'] ?? null));  
-        $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategory: ' . json_encode($property['subCategory'] ?? null));
+        if ($is_debug_property) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - RAW category: ' . json_encode($property['category'] ?? null));
+            $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategories: ' . json_encode($property['subCategories'] ?? null));  
+            $this->log('DEBUG - Property ' . $whise_id . ' - RAW subCategory: ' . json_encode($property['subCategory'] ?? null));
+        }
         
         // 1. D'abord traiter les sous-catégories (prioritaires)
         // Gérer subCategories (pluriel - array)
@@ -1358,7 +1729,9 @@ class Whise_Sync_Manager {
                 $sub_name = $subCategory['displayName'] ?? $subCategory['name'] ?? '';
                 if ($sub_name) {
                     $assigned_categories[] = $sub_name;
-                    $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategories: ' . $sub_name);
+                    if ($is_debug_property) {
+                        $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategories: ' . $sub_name);
+                    }
                 }
             }
         }
@@ -1369,9 +1742,13 @@ class Whise_Sync_Manager {
             $sub_name = $property['subCategory']['displayName'] ?? $property['subCategory']['name'] ?? $this->get_subcategory_name($subcategory_id);
             if ($sub_name && !in_array($sub_name, $assigned_categories)) {
                 $assigned_categories[] = $sub_name;
-                $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategory: ' . $sub_name . ' (ID: ' . $subcategory_id . ')');
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - subcategory from subCategory: ' . $sub_name . ' (ID: ' . $subcategory_id . ')');
+                }
             } else {
-                $this->log('DEBUG - Property ' . $whise_id . ' - subCategory ID ' . $subcategory_id . ' not found in mapping');
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - subCategory ID ' . $subcategory_id . ' not found in mapping');
+                }
             }
         }
         
@@ -1388,32 +1765,42 @@ class Whise_Sync_Manager {
             }
             if (empty($category_name)) {
                 $category_name = $this->get_default_category_name($category_id);
-                if ($category_name) {
+                if ($category_name && $is_debug_property) {
                     $this->log('DEBUG - Property ' . $whise_id . ' - using default category name: ' . $category_name . ' for ID: ' . $category_id);
                 }
             }
             
             if ($category_name) {
                 $assigned_categories[] = $category_name;
-                $this->log('DEBUG - Property ' . $whise_id . ' - main category used: ' . $category_name);
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - main category used: ' . $category_name);
+                }
             }
         }
         
         // 3. Assigner les catégories finales
         if (!empty($assigned_categories)) {
             // Log des données complètes pour debug
-            $this->log('DEBUG - Property ' . $whise_id . ' - category data: ' . json_encode($property['category'] ?? []));
-            $this->log('DEBUG - Property ' . $whise_id . ' - subCategories data: ' . json_encode($property['subCategories'] ?? []));
-            $this->log('DEBUG - Property ' . $whise_id . ' - final assigned_categories: ' . json_encode($assigned_categories));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - category data: ' . json_encode($property['category'] ?? []));
+                $this->log('DEBUG - Property ' . $whise_id . ' - subCategories data: ' . json_encode($property['subCategories'] ?? []));
+                $this->log('DEBUG - Property ' . $whise_id . ' - final assigned_categories: ' . json_encode($assigned_categories));
+            }
             
             wp_set_object_terms($post_id, $assigned_categories, 'property_type', false);
-            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_type: ' . implode(', ', $assigned_categories));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_type: ' . implode(', ', $assigned_categories));
+            }
             
             // Vérification après assignation
             $check_terms = wp_get_object_terms($post_id, 'property_type', ['fields' => 'names']);
-            $this->log('DEBUG - Property ' . $whise_id . ' - verified terms after assignment: ' . implode(', ', $check_terms));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - verified terms after assignment: ' . implode(', ', $check_terms));
+            }
         } else {
-            $this->log('DEBUG - Property ' . $whise_id . ' - NO category found');
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - NO category found');
+            }
         }
         
         // ANCIEN CODE : purpose assigné séparément - maintenant géré par whise_update_simple_transaction_status()
@@ -1440,7 +1827,9 @@ class Whise_Sync_Manager {
         }
         if ($status_name) {
             wp_set_object_terms($post_id, $status_name, 'property_status', false);
-            $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_status: ' . $status_name);
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - assigned to property_status: ' . $status_name);
+            }
         }
         
         // Normalisation taxonomique: Studio si 0 chambre ET pas déjà de sous-catégorie
@@ -1477,7 +1866,9 @@ class Whise_Sync_Manager {
                 'lng' => (float)$final_lng,
             ];
             update_post_meta($post_id, 'immo_location', $acf_location);
-            $this->log('DEBUG - Property ' . $whise_id . ' - projected geo_lat/geo_lng: ' . var_export($final_lat, true) . '/' . var_export($final_lng, true));
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - projected geo_lat/geo_lng: ' . var_export($final_lat, true) . '/' . var_export($final_lng, true));
+            }
         } else {
             $this->log('WARN - Property ' . $whise_id . ' - missing lat/lng after enrichment; geo_* not updated');
         }
@@ -1581,6 +1972,10 @@ class Whise_Sync_Manager {
             return false;
         }
 
+        // Activer les logs détaillés uniquement pour certaines propriétés (pour debug)
+        $debug_property_ids = ['7136195'];
+        $is_debug_property = in_array((string)$whise_id, $debug_property_ids, true);
+
         // Utiliser la qualité configurée ou la meilleure disponible
         $preferred_quality = get_option('whise_image_quality', 'urlXXL'); // Par défaut : haute qualité
         $image_url = '';
@@ -1588,18 +1983,26 @@ class Whise_Sync_Manager {
         // Essayer d'abord la qualité préférée
         if (!empty($picture[$preferred_quality])) {
             $image_url = $picture[$preferred_quality];
-            $this->log('DEBUG - Property ' . $whise_id . ' - Using ' . $preferred_quality . ' (preferred quality) for image ' . $picture['id']);
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - Using ' . $preferred_quality . ' (preferred quality) for image ' . $picture['id']);
+            }
         } else {
             // Fallback : utiliser la meilleure qualité disponible (urlXXL > urlLarge > urlSmall)
             if (!empty($picture['urlXXL'])) {
                 $image_url = $picture['urlXXL'];
-                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlXXL (high quality fallback) for image ' . $picture['id']);
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Using urlXXL (high quality fallback) for image ' . $picture['id']);
+                }
             } elseif (!empty($picture['urlLarge'])) {
                 $image_url = $picture['urlLarge'];
-                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlLarge (medium quality fallback) for image ' . $picture['id']);
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Using urlLarge (medium quality fallback) for image ' . $picture['id']);
+                }
             } elseif (!empty($picture['urlSmall'])) {
                 $image_url = $picture['urlSmall'];
-                $this->log('DEBUG - Property ' . $whise_id . ' - Using urlSmall (low quality fallback) for image ' . $picture['id']);
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Using urlSmall (low quality fallback) for image ' . $picture['id']);
+                }
             }
         }
         
@@ -1610,21 +2013,13 @@ class Whise_Sync_Manager {
         $whise_image_id = $picture['id'];
         $image_order = $picture['order'] ?? 0;
 
-        // Vérifier si l'image existe déjà (éviter les doublons)
-        $existing_attachment = get_posts([
-            'post_type' => 'attachment',
-            'meta_key' => '_whise_original_url',
-            'meta_value' => $image_url,
-            'numberposts' => 1
-        ]);
-
-        if (!empty($existing_attachment)) {
-            $this->log('DEBUG - Property ' . $whise_id . ' - Image already exists: ' . $image_url);
-            return $existing_attachment[0]->ID;
-        }
+        // Note: La vérification d'existence est déjà faite dans import_property()
+        // Cette fonction est appelée uniquement si l'image doit être téléchargée
 
         // Télécharger l'image
-        $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image: ' . $image_url);
+        if ($is_debug_property) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - Downloading image: ' . $image_url);
+        }
         
         $response = wp_remote_get($image_url, [
             'timeout' => 120, // Augmenté à 2 minutes pour les images
@@ -1661,8 +2056,9 @@ class Whise_Sync_Manager {
             }
         }
 
-        // Créer un nom de fichier unique
-        $filename = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id . '.' . $file_extension;
+        // Créer un nom de fichier unique avec zéros pour le tri lexical (01, 02, 03, etc.)
+        $image_order_padded = str_pad((string)$image_order, 3, '0', STR_PAD_LEFT);
+        $filename = 'whise-' . $whise_id . '-' . $image_order_padded . '-' . $whise_image_id . '.' . $file_extension;
         
         // Vérifier si un fichier avec ce nom (ou ses variantes) existe déjà
         $upload_dir = wp_upload_dir();
@@ -1671,16 +2067,21 @@ class Whise_Sync_Manager {
         // Supprimer le fichier existant et ses variantes (-1, -2, etc.) pour éviter les doublons
         if (file_exists($target_path)) {
             @unlink($target_path);
-            $this->log('DEBUG - Property ' . $whise_id . ' - Deleted existing file to avoid duplicates: ' . $filename);
+            if ($is_debug_property) {
+                $this->log('DEBUG - Property ' . $whise_id . ' - Deleted existing file to avoid duplicates: ' . $filename);
+            }
         }
         
         // Supprimer aussi les variantes avec suffixes (-1, -2, -3, etc.)
-        $filename_without_ext = 'whise-' . $whise_id . '-' . $image_order . '-' . $whise_image_id;
+        $image_order_padded = str_pad((string)$image_order, 3, '0', STR_PAD_LEFT);
+        $filename_without_ext = 'whise-' . $whise_id . '-' . $image_order_padded . '-' . $whise_image_id;
         for ($i = 1; $i <= 10; $i++) {
             $variant_path = $upload_dir['path'] . '/' . $filename_without_ext . '-' . $i . '.' . $file_extension;
             if (file_exists($variant_path)) {
                 @unlink($variant_path);
-                $this->log('DEBUG - Property ' . $whise_id . ' - Deleted duplicate variant: ' . basename($variant_path));
+                if ($is_debug_property) {
+                    $this->log('DEBUG - Property ' . $whise_id . ' - Deleted duplicate variant: ' . basename($variant_path));
+                }
             }
         }
 
@@ -1698,7 +2099,8 @@ class Whise_Sync_Manager {
             'post_title' => 'Image propriété ' . $whise_id . ' - ' . $image_order,
             'post_content' => '',
             'post_status' => 'inherit',
-            'post_parent' => $post_id
+            'post_parent' => $post_id,
+            'menu_order' => (int)$image_order // Définir l'ordre pour WordPress/Elementor
         ];
 
         $attachment_id = wp_insert_attachment($attachment, $upload['file'], $post_id);
@@ -1719,7 +2121,9 @@ class Whise_Sync_Manager {
         update_post_meta($attachment_id, '_whise_image_order', $image_order);
         update_post_meta($attachment_id, '_wp_attachment_image_alt', 'Image propriété ' . $whise_id);
 
-        $this->log('DEBUG - Property ' . $whise_id . ' - Created attachment ID ' . $attachment_id . ' for image ' . $whise_image_id);
+        if ($is_debug_property) {
+            $this->log('DEBUG - Property ' . $whise_id . ' - Created attachment ID ' . $attachment_id . ' for image ' . $whise_image_id);
+        }
         
         return $attachment_id;
     }

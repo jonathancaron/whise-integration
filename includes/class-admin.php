@@ -11,6 +11,7 @@ class Whise_Admin {
         add_action('admin_post_whise_reset_taxonomies', [$this, 'reset_taxonomies']);
         add_action('admin_post_whise_force_reset', [$this, 'force_reset']);
         add_action('admin_post_whise_cleanup_images', [$this, 'cleanup_images']);
+        add_action('admin_post_whise_delete_property_images', [$this, 'delete_property_images']);
         add_action('admin_notices', [$this, 'admin_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
     }
@@ -263,6 +264,31 @@ class Whise_Admin {
                         <button type="submit" class="button button-secondary" style="background-color: #ff6b35; border-color: #ff6b35; color: white;" onclick="return confirm('<?php _e('ATTENTION : Cette action va supprimer TOUTES les images Whise téléchargées et remettre à zéro les galeries. Êtes-vous sûr de vouloir continuer ?', 'whise-integration'); ?>')"><?php _e('🗑️ Nettoyer toutes les images', 'whise-integration'); ?></button>
                     </form>
                 </div>
+            </div>
+            
+            <!-- Supprimer les images d'un bien spécifique -->
+            <div class="whise-section">
+                <h2><?php _e('Supprimer les images d\'un bien', 'whise-integration'); ?></h2>
+                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" style="max-width: 500px;">
+                    <?php wp_nonce_field('whise_delete_property_images', 'whise_delete_property_images_nonce'); ?>
+                    <input type="hidden" name="action" value="whise_delete_property_images">
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="whise_property_id"><?php _e('Référence Whise', 'whise-integration'); ?></label>
+                            </th>
+                            <td>
+                                <input type="text" id="whise_property_id" name="whise_property_id" value="" class="regular-text" placeholder="Ex: 7136195" required>
+                                <p class="description"><?php _e('Entrez la référence Whise du bien (ex: 7136195)', 'whise-integration'); ?></p>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" class="button button-secondary" style="background-color: #dc3232; border-color: #dc3232; color: white;" onclick="return confirm('<?php _e('ATTENTION : Cette action va supprimer TOUTES les images de ce bien. Êtes-vous sûr de vouloir continuer ?', 'whise-integration'); ?>')">
+                            <?php _e('🗑️ Supprimer toutes les images de ce bien', 'whise-integration'); ?>
+                        </button>
+                    </p>
+                </form>
             </div>
             
             <!-- Logs -->
@@ -685,6 +711,31 @@ class Whise_Admin {
             if (isset($_GET['synced'])) {
                 echo '<div class="notice notice-success is-dismissible"><p>' . __('Synchronisation Whise terminée avec succès.', 'whise-integration') . '</p></div>';
             }
+            if (isset($_GET['images_deleted']) && $_GET['images_deleted'] === 'success') {
+                $whise_id = isset($_GET['whise_id']) ? esc_html($_GET['whise_id']) : '';
+                $deleted = isset($_GET['deleted']) ? (int)$_GET['deleted'] : 0;
+                $errors = isset($_GET['errors']) ? (int)$_GET['errors'] : 0;
+                echo '<div class="notice notice-success is-dismissible"><p>' . 
+                     sprintf(__('Images supprimées avec succès pour le bien %s. Images supprimées: %d, Erreurs: %d', 'whise-integration'), $whise_id, $deleted, $errors) . 
+                     '</p></div>';
+            }
+            if (isset($_GET['error']) && $_GET['error'] === 'property_not_found') {
+                $whise_id = isset($_GET['whise_id']) ? esc_html($_GET['whise_id']) : '';
+                echo '<div class="notice notice-error is-dismissible"><p>' . 
+                     sprintf(__('Erreur : Aucun bien trouvé avec la référence Whise %s', 'whise-integration'), $whise_id) . 
+                     '</p></div>';
+            }
+            if (isset($_GET['error']) && $_GET['error'] === 'no_images') {
+                $whise_id = isset($_GET['whise_id']) ? esc_html($_GET['whise_id']) : '';
+                echo '<div class="notice notice-warning is-dismissible"><p>' . 
+                     sprintf(__('Aucune image trouvée pour le bien %s', 'whise-integration'), $whise_id) . 
+                     '</p></div>';
+            }
+            if (isset($_GET['error']) && $_GET['error'] === 'no_property_id') {
+                echo '<div class="notice notice-error is-dismissible"><p>' . 
+                     __('Erreur : Veuillez entrer une référence Whise', 'whise-integration') . 
+                     '</p></div>';
+            }
             
             if (isset($_GET['test']) && $_GET['test'] === 'success') {
                 echo '<div class="notice notice-success is-dismissible"><p>' . __('Test de connexion réussi ! L\'API Whise est accessible.', 'whise-integration') . '</p></div>';
@@ -862,6 +913,106 @@ class Whise_Admin {
 
         // Redirection avec message de succès
         wp_redirect(admin_url('admin.php?page=whise-integration&cleanup=success&deleted=' . $deleted_count . '&errors=' . $error_count . '&galleries=' . $gallery_cleaned . '&total=' . $total_processed));
+        exit;
+    }
+
+    public function delete_property_images() {
+        if (!current_user_can('manage_options')) wp_die('Unauthorized');
+        check_admin_referer('whise_delete_property_images', 'whise_delete_property_images_nonce');
+        
+        $whise_id = isset($_POST['whise_property_id']) ? sanitize_text_field($_POST['whise_property_id']) : '';
+        
+        if (empty($whise_id)) {
+            wp_redirect(admin_url('admin.php?page=whise-integration&error=no_property_id'));
+            exit;
+        }
+        
+        // Trouver le bien par sa référence Whise
+        $properties = get_posts([
+            'post_type' => 'property',
+            'meta_key' => 'whise_id',
+            'meta_value' => $whise_id,
+            'post_status' => 'any',
+            'numberposts' => 1
+        ]);
+        
+        if (empty($properties)) {
+            wp_redirect(admin_url('admin.php?page=whise-integration&error=property_not_found&whise_id=' . urlencode($whise_id)));
+            exit;
+        }
+        
+        $property = $properties[0];
+        $post_id = $property->ID;
+        
+        // Récupérer toutes les images attachées au post (pas seulement celles dans _whise_gallery_images)
+        $gallery_ids = get_post_meta($post_id, '_whise_gallery_images', true);
+        if (!is_array($gallery_ids)) {
+            $gallery_ids = [];
+        }
+        
+        // Récupérer aussi toutes les images attachées directement au post
+        $all_attached_images = get_posts([
+            'post_type' => 'attachment',
+            'post_parent' => $post_id,
+            'post_mime_type' => 'image',
+            'posts_per_page' => -1,
+            'fields' => 'ids'
+        ]);
+        
+        // Fusionner les deux listes pour avoir toutes les images
+        $all_images = array_unique(array_merge($gallery_ids, $all_attached_images));
+        
+        if (empty($all_images)) {
+            wp_redirect(admin_url('admin.php?page=whise-integration&error=no_images&whise_id=' . urlencode($whise_id)));
+            exit;
+        }
+        
+        $deleted_count = 0;
+        $error_count = 0;
+        
+        $this->log('INFO - Suppression des images du bien ' . $whise_id . ' (Post ID: ' . $post_id . ') - ' . count($all_images) . ' image(s) trouvée(s)');
+        
+        // Supprimer toutes les images
+        foreach ($all_images as $attachment_id) {
+            if (empty($attachment_id)) continue;
+            
+            $file_path = get_attached_file($attachment_id);
+            $deleted = wp_delete_attachment($attachment_id, true);
+            
+            if ($deleted) {
+                $deleted_count++;
+                $this->log('INFO - Image supprimée: attachment ID ' . $attachment_id);
+                
+                // Supprimer aussi le fichier physique et ses variantes
+                if ($file_path && file_exists($file_path)) {
+                    @unlink($file_path);
+                    $path_info = pathinfo($file_path);
+                    if (isset($path_info['filename']) && isset($path_info['dirname']) && isset($path_info['extension'])) {
+                        $filename_without_ext = $path_info['filename'];
+                        for ($i = 1; $i <= 10; $i++) {
+                            $variant_path = $path_info['dirname'] . '/' . $filename_without_ext . '-' . $i . '.' . $path_info['extension'];
+                            if (file_exists($variant_path)) {
+                                @unlink($variant_path);
+                            }
+                        }
+                    }
+                }
+            } else {
+                $error_count++;
+                $this->log('ERROR - Échec suppression image: attachment ID ' . $attachment_id);
+            }
+        }
+        
+        // Supprimer la métadonnée de galerie
+        delete_post_meta($post_id, '_whise_gallery_images');
+        
+        // Supprimer l'image mise en avant
+        delete_post_thumbnail($post_id);
+        
+        $this->log('INFO - Suppression terminée pour le bien ' . $whise_id . '. Images supprimées: ' . $deleted_count . ', Erreurs: ' . $error_count);
+        
+        // Redirection avec message de succès
+        wp_redirect(admin_url('admin.php?page=whise-integration&images_deleted=success&whise_id=' . urlencode($whise_id) . '&deleted=' . $deleted_count . '&errors=' . $error_count));
         exit;
     }
 

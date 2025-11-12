@@ -821,6 +821,9 @@ class Whise_Property_CPT {
             $gallery = [];
             foreach ($gallery_ids as $attachment_id) {
                 if (wp_attachment_is_image($attachment_id)) {
+                    $order = get_post_meta($attachment_id, '_whise_image_order', true);
+                    $order = $order !== '' ? (int)$order : 999;
+                    
                     $gallery[] = [
                         'id' => $attachment_id,
                         'url' => wp_get_attachment_url($attachment_id),
@@ -829,10 +832,16 @@ class Whise_Property_CPT {
                         'large' => wp_get_attachment_image_url($attachment_id, 'large'),
                         'title' => get_the_title($attachment_id),
                         'alt' => get_post_meta($attachment_id, '_wp_attachment_image_alt', true),
-                        'order' => get_post_meta($attachment_id, '_whise_image_order', true)
+                        'order' => $order
                     ];
                 }
             }
+            
+            // Trier la galerie par ordre avant de la retourner
+            usort($gallery, function($a, $b) {
+                return $a['order'] <=> $b['order'];
+            });
+            
             return $gallery;
         }
         
